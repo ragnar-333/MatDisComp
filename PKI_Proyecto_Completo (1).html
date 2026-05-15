@@ -1,0 +1,1529 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>PKI — Infraestructura de Clave Pública</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --navy:#0D1B2A;--blue:#1A56DB;--blue-lt:#EBF5FF;--blue-mid:#BFDBFE;
+  --teal:#0D9488;--teal-lt:#F0FDFA;--teal-mid:#99F6E4;
+  --amber:#B45309;--amber-lt:#FFFBEB;--amber-mid:#FCD34D;
+  --red:#C81E1E;--red-lt:#FEF2F2;
+  --purple:#5521B5;--purple-lt:#F5F3FF;
+  --gray1:#F8FAFC;--gray2:#F1F5F9;--gray3:#E2E8F0;--gray4:#94A3B8;--gray5:#475569;
+  --text:#0F172A;--body:#334155;
+  --serif:'Playfair Display',Georgia,serif;
+  --mono:'DM Mono','Courier New',monospace;
+  --sans:'DM Sans',sans-serif;
+  --r:8px;--r2:12px;--r3:16px;
+  --shadow:0 1px 3px rgba(0,0,0,.08),0 4px 12px rgba(0,0,0,.06);
+  --shadow2:0 4px 16px rgba(0,0,0,.12),0 1px 4px rgba(0,0,0,.08);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--gray1);color:var(--text);font-family:var(--sans);min-height:100vh;font-size:15px;line-height:1.6;}
+
+/* ── HEADER ────────────────────────────────────────────────────────────────── */
+#header{
+  background:var(--navy);
+  position:sticky;top:0;z-index:100;
+  box-shadow:0 2px 20px rgba(0,0,0,.3);
+}
+.hdr-inner{max-width:1100px;margin:0 auto;padding:0 1.5rem;}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;padding:1rem 0 0;flex-wrap:wrap;gap:.5rem;}
+.logo{font-family:var(--serif);font-size:1.4rem;color:#fff;font-weight:700;letter-spacing:-.02em;}
+.logo em{font-style:italic;color:#93C5FD;}
+.logo-meta{font-family:var(--mono);font-size:.62rem;color:#64748B;letter-spacing:.04em;display:block;margin-top:2px;}
+.progress-bar{height:2px;background:linear-gradient(90deg,var(--blue),var(--teal));width:0%;transition:width .2s;}
+nav{display:flex;gap:0;overflow-x:auto;margin-top:.75rem;scrollbar-width:none;}
+nav::-webkit-scrollbar{display:none;}
+.nb{
+  padding:.6rem 1rem;background:none;border:none;border-bottom:2px solid transparent;
+  color:#64748B;font-family:var(--mono);font-size:.7rem;cursor:pointer;white-space:nowrap;
+  transition:all .2s;letter-spacing:.04em;
+}
+.nb:hover{color:#CBD5E1;}
+.nb.on{color:#93C5FD;border-bottom-color:#93C5FD;background:rgba(147,197,253,.06);}
+
+/* ── LAYOUT ────────────────────────────────────────────────────────────────── */
+main{max-width:1100px;margin:0 auto;padding:2.5rem 1.5rem 5rem;}
+.page{display:none;animation:fadeUp .3s ease;}
+.page.on{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+/* ── TYPOGRAPHY ────────────────────────────────────────────────────────────── */
+.sec-title{font-family:var(--serif);font-size:2rem;font-weight:700;color:var(--navy);margin-bottom:.5rem;letter-spacing:-.03em;line-height:1.2;}
+.sec-title em{font-style:italic;color:var(--blue);}
+.sec-intro{font-size:.88rem;color:var(--body);line-height:1.85;margin-bottom:2rem;max-width:720px;}
+.h2{font-size:1rem;font-weight:600;color:var(--navy);margin:2rem 0 .6rem;
+  padding-bottom:.4rem;border-bottom:2px solid var(--blue-lt);display:flex;align-items:center;gap:.5rem;}
+.h2::before{content:'';display:block;width:3px;height:1em;background:var(--blue);border-radius:2px;flex-shrink:0;}
+.h3{font-size:.85rem;font-weight:600;color:var(--teal);margin:1.2rem 0 .4rem;}
+.body-text{font-size:.85rem;color:var(--body);line-height:1.85;margin-bottom:.6rem;}
+
+/* ── CARDS ─────────────────────────────────────────────────────────────────── */
+.card{background:#fff;border:1px solid var(--gray3);border-radius:var(--r2);padding:1.5rem;margin-bottom:1rem;box-shadow:var(--shadow);}
+.card-lbl{font-family:var(--mono);font-size:.62rem;letter-spacing:.1em;color:var(--teal);text-transform:uppercase;margin-bottom:.75rem;font-weight:500;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;}
+@media(max-width:640px){.grid2,.grid3{grid-template-columns:1fr;}}
+
+/* ── BOXES ─────────────────────────────────────────────────────────────────── */
+.box{border-radius:0 var(--r) var(--r) 0;padding:.9rem 1.1rem;margin:.75rem 0;}
+.box-title{font-family:var(--mono);font-size:.62rem;font-weight:500;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.4rem;}
+.box-blue{background:var(--blue-lt);border-left:4px solid var(--blue);}
+.box-blue .box-title{color:var(--blue);}
+.box-teal{background:var(--teal-lt);border-left:4px solid var(--teal);}
+.box-teal .box-title{color:var(--teal);}
+.box-amber{background:var(--amber-lt);border-left:4px solid var(--amber);}
+.box-amber .box-title{color:var(--amber);}
+.box-p{font-size:.82rem;color:var(--navy);line-height:1.8;}
+
+/* ── MATH BLOCK ────────────────────────────────────────────────────────────── */
+.math{
+  font-family:var(--mono);font-size:.78rem;color:var(--navy);
+  background:linear-gradient(135deg,#FFFBEB,#FEF9C3);
+  border-left:3px solid var(--amber);border-radius:0 var(--r) var(--r) 0;
+  padding:.9rem 1.1rem;margin:.6rem 0;line-height:2;white-space:pre-wrap;
+}
+.proof{font-size:.78rem;color:var(--gray5);background:var(--gray2);border-radius:var(--r);
+  padding:.85rem 1rem;margin:.5rem 0;line-height:1.85;font-style:italic;}
+
+/* ── THEOREM BOXES ─────────────────────────────────────────────────────────── */
+.thm{border:1px solid var(--gray3);border-radius:var(--r2);padding:1rem 1.1rem;margin:.75rem 0;background:#fff;}
+.thm-head{display:flex;align-items:center;gap:.5rem;margin-bottom:.4rem;}
+.thm-badge{font-family:var(--mono);font-size:.62rem;font-weight:500;padding:2px 8px;border-radius:20px;letter-spacing:.05em;}
+.thm-def .thm-badge{background:var(--amber-lt);color:var(--amber);border:1px solid var(--amber-mid);}
+.thm-teo .thm-badge{background:var(--blue-lt);color:var(--blue);border:1px solid var(--blue-mid);}
+.thm-ex .thm-badge{background:var(--teal-lt);color:var(--teal);border:1px solid var(--teal-mid);}
+.thm-text{font-size:.82rem;color:var(--navy);line-height:1.8;}
+
+/* ── TABLE ─────────────────────────────────────────────────────────────────── */
+.tbl-wrap{overflow-x:auto;margin:.5rem 0;border-radius:var(--r2);border:1px solid var(--gray3);box-shadow:var(--shadow);}
+table{width:100%;border-collapse:collapse;font-size:.78rem;}
+th{background:var(--navy);color:#fff;font-weight:500;padding:.55rem .85rem;text-align:left;font-size:.72rem;letter-spacing:.02em;}
+th:first-child{border-radius:var(--r2) 0 0 0;}
+th:last-child{border-radius:0 var(--r2) 0 0;}
+td{padding:.5rem .85rem;border-bottom:1px solid var(--gray3);color:var(--body);vertical-align:top;}
+tr:last-child td{border-bottom:none;}
+tr:nth-child(even) td{background:var(--gray1);}
+.td-blue td{background:var(--blue-lt)!important;}
+.td-teal td{background:var(--teal-lt)!important;}
+.td-amber td{background:var(--amber-lt)!important;}
+.td-red td{background:var(--red-lt)!important;}
+.tbl-cap{font-size:.7rem;color:var(--gray4);text-align:center;padding:.4rem;font-style:italic;}
+
+/* ── BADGES ────────────────────────────────────────────────────────────────── */
+.badge{display:inline-block;font-family:var(--mono);font-size:.62rem;padding:2px 8px;border-radius:20px;font-weight:500;letter-spacing:.03em;}
+.b-teal{background:var(--teal-lt);color:var(--teal);border:1px solid var(--teal-mid);}
+.b-blue{background:var(--blue-lt);color:var(--blue);border:1px solid var(--blue-mid);}
+.b-amber{background:var(--amber-lt);color:var(--amber);border:1px solid var(--amber-mid);}
+.b-red{background:var(--red-lt);color:var(--red);border:1px solid #FCA5A5;}
+.b-purple{background:var(--purple-lt);color:var(--purple);border:1px solid #C4B5FD;}
+
+/* ── STEPS ─────────────────────────────────────────────────────────────────── */
+.step{display:flex;gap:.85rem;margin-bottom:.75rem;align-items:flex-start;}
+.step-n{width:24px;height:24px;min-width:24px;border-radius:50%;background:var(--blue-lt);
+  border:1.5px solid var(--blue-mid);display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:.62rem;color:var(--blue);font-weight:600;margin-top:1px;}
+.step h4{font-size:.82rem;font-weight:600;color:var(--navy);margin-bottom:2px;}
+.step p{font-size:.78rem;color:var(--body);line-height:1.7;}
+
+/* ── CODE ──────────────────────────────────────────────────────────────────── */
+.code{
+  background:#1E2D3D;border-radius:var(--r2);padding:1rem 1.1rem;
+  font-family:var(--mono);font-size:.75rem;color:#CDD9E5;line-height:1.9;
+  white-space:pre;overflow-x:auto;margin:.5rem 0;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
+}
+.code .cm{color:#64748B;}
+.code .ck{color:#93C5FD;}
+.code .cs{color:#86EFAC;}
+
+/* ── HIERARCHY ─────────────────────────────────────────────────────────────── */
+.hier{display:flex;flex-direction:column;align-items:center;padding:1rem 0;}
+.hier-node{
+  border:1.5px solid var(--gray3);border-radius:var(--r2);padding:.75rem 2rem;
+  text-align:center;cursor:pointer;transition:all .2s;min-width:320px;max-width:520px;
+  background:#fff;box-shadow:var(--shadow);
+}
+.hier-node:hover{box-shadow:var(--shadow2);}
+.hier-node.open{box-shadow:var(--shadow2);}
+.hier-conn{width:2px;height:28px;background:var(--gray3);margin:0 auto;}
+.hier-label{font-size:.85rem;font-weight:600;margin-bottom:2px;}
+.hier-sub{font-size:.7rem;color:var(--gray4);}
+.hier-detail{font-size:.75rem;color:var(--body);margin-top:.6rem;text-align:left;line-height:1.7;animation:fadeUp .2s ease;}
+
+/* ── SMIME FLOW ────────────────────────────────────────────────────────────── */
+.flow{display:flex;flex-direction:column;gap:4px;margin:1rem 0;}
+.flow-row{display:flex;border-radius:var(--r);overflow:hidden;border:1px solid var(--gray3);transition:opacity .4s,transform .3s;}
+.flow-row.dim{opacity:.3;transform:translateX(-4px);}
+.flow-row.lit{opacity:1;transform:none;box-shadow:var(--shadow);}
+.flow-l{width:130px;min-width:130px;padding:.75rem;background:#fff;border-right:1px solid var(--gray3);}
+.flow-r{flex:1;padding:.75rem;background:var(--gray1);}
+.flow-num{font-family:var(--mono);font-size:.6rem;color:var(--blue);font-weight:500;margin-bottom:2px;}
+.flow-who{font-size:.65rem;color:var(--amber);font-weight:500;margin-bottom:5px;}
+.flow-title{font-size:.78rem;font-weight:600;color:var(--navy);margin-bottom:3px;}
+.flow-formula{font-family:var(--mono);font-size:.7rem;color:#1D4ED8;background:var(--blue-lt);
+  border-radius:4px;padding:3px 8px;margin:3px 0;display:inline-block;white-space:pre-wrap;}
+.flow-desc{font-size:.72rem;color:var(--gray5);line-height:1.6;}
+
+/* ── OUTLOOK SIM ───────────────────────────────────────────────────────────── */
+.ol-wrap{border:1px solid var(--gray3);border-radius:var(--r2);overflow:hidden;box-shadow:var(--shadow2);}
+.ol-bar{background:#0078d4;padding:.65rem 1rem;display:flex;align-items:center;gap:.5rem;}
+.ol-ico{width:22px;height:22px;background:#fff;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#0078d4;flex-shrink:0;}
+.ol-emails{display:flex;flex-direction:column;}
+.ol-email{padding:.7rem 1rem;border-bottom:1px solid var(--gray3);display:flex;gap:.65rem;cursor:pointer;transition:background .15s;background:#fff;}
+.ol-email:hover{background:var(--blue-lt);}
+.ol-email.sel{background:var(--blue-lt);border-left:3px solid var(--blue);}
+.ol-body-wrap{flex:1;padding:1.1rem;background:#FAFAFA;}
+
+/* ── DEMO INPUTS ───────────────────────────────────────────────────────────── */
+.inp{width:100%;padding:.55rem .85rem;background:#fff;border:1.5px solid var(--gray3);
+  border-radius:var(--r);color:var(--text);font-family:var(--mono);font-size:.78rem;
+  outline:none;transition:border-color .2s;margin-bottom:.6rem;}
+.inp:focus{border-color:var(--blue);}
+.btn{padding:.5rem 1.2rem;background:#fff;border:1.5px solid var(--gray3);color:var(--blue);
+  font-family:var(--mono);font-size:.72rem;border-radius:var(--r);cursor:pointer;
+  transition:all .15s;letter-spacing:.04em;font-weight:500;}
+.btn:hover{background:var(--blue-lt);border-color:var(--blue);}
+.btn-teal{color:var(--teal);border-color:var(--teal-mid);}
+.btn-teal:hover{background:var(--teal-lt);border-color:var(--teal);}
+.btn-sm{padding:.35rem .85rem;font-size:.66rem;}
+.out{
+  background:var(--gray2);border:1px solid var(--gray3);border-radius:var(--r2);
+  padding:.85rem;font-family:var(--mono);font-size:.72rem;color:var(--navy);
+  line-height:1.9;white-space:pre-wrap;word-break:break-all;min-height:60px;margin-top:.6rem;
+}
+.out.ok{color:#065F46;background:var(--teal-lt);border-color:var(--teal-mid);}
+.out.err{color:var(--red);background:var(--red-lt);border-color:#FCA5A5;}
+
+/* ── CURVE CANVAS ──────────────────────────────────────────────────────────── */
+#curveCanvas{border-radius:var(--r2);display:block;width:100%;max-width:520px;}
+
+/* ── COVER ─────────────────────────────────────────────────────────────────── */
+.cover{
+  background:linear-gradient(135deg,var(--navy) 0%,#162032 60%,#0D2847 100%);
+  border-radius:var(--r3);padding:2.5rem;margin-bottom:2rem;color:#fff;
+  position:relative;overflow:hidden;box-shadow:var(--shadow2);
+}
+.cover::before{
+  content:'';position:absolute;top:-40%;right:-10%;width:500px;height:500px;
+  background:radial-gradient(circle,rgba(26,86,219,.25) 0%,transparent 70%);
+  pointer-events:none;
+}
+.cover::after{
+  content:'';position:absolute;bottom:-30%;left:-5%;width:400px;height:400px;
+  background:radial-gradient(circle,rgba(13,148,136,.15) 0%,transparent 70%);
+  pointer-events:none;
+}
+.cover-title{font-family:var(--serif);font-size:2.4rem;font-weight:700;line-height:1.1;
+  letter-spacing:-.03em;margin-bottom:.4rem;position:relative;z-index:1;}
+.cover-sub{font-size:1rem;color:#93C5FD;margin-bottom:1.5rem;font-style:italic;font-family:var(--serif);position:relative;z-index:1;}
+.cover-meta{display:grid;grid-template-columns:auto 1fr;gap:.25rem .75rem;font-family:var(--mono);
+  font-size:.72rem;color:#94A3B8;position:relative;z-index:1;max-width:440px;}
+.cover-meta strong{color:#E2E8F0;}
+.cover-chips{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1.5rem;position:relative;z-index:1;}
+.chip{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);
+  border-radius:20px;padding:4px 12px;font-family:var(--mono);font-size:.65rem;color:#CBD5E1;}
+.cover-quote{
+  font-family:var(--serif);font-style:italic;font-size:.85rem;color:#64748B;
+  border-top:1px solid rgba(255,255,255,.1);margin-top:1.5rem;padding-top:1rem;
+  position:relative;z-index:1;line-height:1.7;
+}
+
+/* ── REFERENCES ────────────────────────────────────────────────────────────── */
+.ref-item{display:flex;gap:.75rem;margin-bottom:.65rem;padding-bottom:.65rem;
+  border-bottom:1px solid var(--gray3);}
+.ref-item:last-child{border-bottom:none;}
+.ref-tag{font-family:var(--mono);font-size:.68rem;color:var(--blue);font-weight:600;min-width:30px;flex-shrink:0;padding-top:1px;}
+.ref-text{font-size:.75rem;color:var(--gray5);line-height:1.7;}
+
+/* ── SUCCESS BANNER ────────────────────────────────────────────────────────── */
+.success-ban{background:var(--teal-lt);border:1px solid var(--teal-mid);border-radius:var(--r2);
+  padding:.85rem 1rem;display:flex;align-items:center;gap:.75rem;margin-top:1rem;
+  animation:fadeUp .3s ease;}
+.success-ban-ico{font-size:1.3rem;}
+</style>
+</head>
+<body>
+
+<div id="header">
+  <div class="hdr-inner">
+    <div class="hdr-top">
+      <div>
+        <div class="logo">PKI · <em>Matemáticas Discretas</em></div>
+        <span class="logo-meta">Dolores Emiliano García Núñez · Universidad Anáhuac · 2026</span>
+      </div>
+    </div>
+    <nav id="nav">
+      <button class="nb on" onclick="show('cover')">Inicio</button>
+      <button class="nb" onclick="show('pki')">① PKI</button>
+      <button class="nb" onclick="show('cert')">② X.509</button>
+      <button class="nb" onclick="show('smime')">③ S/MIME</button>
+      <button class="nb" onclick="show('outlook')">④ Outlook</button>
+      <button class="nb" onclick="show('resultados')">⑤ Resultados</button>
+      <button class="nb" onclick="show('demo')">⑥ Demo</button>
+      <button class="nb" onclick="show('conc')">⑦ Conclusiones</button>
+      <button class="nb" onclick="show('sim')" id="nb-sim">⑧ Simulación en vivo</button>
+    </nav>
+    <div class="progress-bar" id="prog"></div>
+  </div>
+</div>
+
+<main>
+
+<!-- ══════════════════════════════ PORTADA ══════════════════════════════════ -->
+<div id="page-cover" class="page on">
+  <div class="cover">
+    <div class="cover-title">Infraestructura de<br/>Clave Pública</div>
+    <div class="cover-sub">Certificados Digitales y Conexión con Outlook</div>
+    <div class="cover-meta">
+      <strong>Integrante</strong><span>Dolores Emiliano García Núñez</span>
+      <strong>1ª Entrega</strong><span>19 de febrero de 2026</span>
+      <strong>Materia</strong><span>Matemáticas Discretas</span>
+      <strong>Institución</strong><span>Universidad Anáhuac</span>
+      <strong>Estándares</strong><span>RFC 5280 · RFC 8551 · NIST SP 800-57 · X.509 v3</span>
+    </div>
+    <div class="cover-chips">
+      <span class="chip">PKI</span><span class="chip">X.509 v3</span>
+      <span class="chip">RSA-2048</span><span class="chip">ECDSA P-256</span>
+      <span class="chip">EdDSA / Ed25519</span><span class="chip">SHA-256</span>
+      <span class="chip">AES-256</span><span class="chip">S/MIME</span>
+      <span class="chip">ML-DSA (Post-Q)</span>
+    </div>
+    <div class="cover-quote">«La seguridad de PKI descansa en la dificultad computacional de la factorización de enteros y el logaritmo discreto en curvas elípticas — dos problemas centrales de las Matemáticas Discretas.»</div>
+  </div>
+
+  <div class="grid3">
+    <div class="card" style="border-top:3px solid var(--blue)">
+      <div class="card-lbl">Tema 1</div>
+      <div style="font-size:.9rem;font-weight:600;color:var(--navy);margin-bottom:.4rem">Infraestructura PKI</div>
+      <div style="font-size:.78rem;color:var(--body)">Jerarquía de CAs, Teorema de Euler, RSA, ECDSA, logaritmo discreto, componentes del sistema.</div>
+    </div>
+    <div class="card" style="border-top:3px solid var(--teal)">
+      <div class="card-lbl">Tema 2</div>
+      <div style="font-size:.9rem;font-weight:600;color:var(--navy);margin-bottom:.4rem">Certificados X.509 v3</div>
+      <div style="font-size:.78rem;color:var(--body)">Estructura del certificado, algoritmos NIST, formatos de archivo, ciclo de vida completo.</div>
+    </div>
+    <div class="card" style="border-top:3px solid var(--amber)">
+      <div class="card-lbl">Tema 3</div>
+      <div style="font-size:.9rem;font-weight:600;color:var(--navy);margin-bottom:.4rem">Outlook — S/MIME</div>
+      <div style="font-size:.78rem;color:var(--body)">Flujo completo firma+cifrado, configuración paso a paso, las 5 verificaciones automáticas.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════ PKI ══════════════════════════════════════ -->
+<div id="page-pki" class="page">
+  <h1 class="sec-title">Infraestructura de <em>Clave Pública</em></h1>
+  <p class="sec-intro">PKI es un conjunto de políticas, procedimientos, hardware, software y personas que permiten la creación, gestión, distribución, uso, almacenamiento y revocación de <strong>certificados digitales</strong>. Su propósito fundamental es establecer confianza verificable entre entidades que nunca han intercambiado información previa.</p>
+
+  <div class="box box-blue">
+    <div class="box-title">Problema fundamental — Diffie y Hellman, 1976</div>
+    <p class="box-p">¿Cómo pueden dos entidades comunicarse de forma segura sin haber acordado previamente una clave secreta? La respuesta surgió de las <strong>funciones trampa unidireccionales</strong> (<em>trapdoor one-way functions</em>): <em>f(x)</em> es fácil de calcular pero <em>f⁻¹(y)</em> es computacionalmente inviable sin la trampa.</p>
+  </div>
+
+  <div class="h2">Problemas matemáticos que sustentan PKI</div>
+  <div class="tbl-wrap">
+  <table>
+    <thead><tr><th>Problema</th><th>Instancia difícil</th><th>Algoritmo</th><th>Clave</th></tr></thead>
+    <tbody>
+      <tr class="td-blue"><td>Factorización de enteros</td><td>Dado n = p·q, encontrar p y q</td><td>RSA</td><td>2048 bits</td></tr>
+      <tr class="td-teal"><td>Log. discreto en E(𝔽ₚ)</td><td>Dado Q = kP, encontrar k</td><td>ECDSA, EdDSA</td><td>256 bits</td></tr>
+      <tr class="td-amber"><td>Log. discreto en ℤ*ₚ</td><td>Dado gˣ ≡ a (mod p), encontrar x</td><td>DH, DSA</td><td>2048 bits</td></tr>
+    </tbody>
+  </table>
+  <div class="tbl-cap">Tabla 1. Problemas matemáticos que sustentan la seguridad de PKI (lo del pizarrón: gˣ = a).</div>
+  </div>
+
+  <div class="h2">Fundamento matemático: RSA</div>
+
+  <div class="thm thm-def">
+    <div class="thm-head"><span class="thm-badge">Definición</span><strong style="font-size:.82rem">Función totiente de Euler</strong></div>
+    <div class="thm-text">Para n ∈ ℕ, φ(n) cuenta los enteros en {1,…,n} coprimos con n. Para n = p·q con p,q primos distintos: <strong>φ(n) = (p−1)(q−1)</strong>.</div>
+  </div>
+
+  <div class="thm thm-teo">
+    <div class="thm-head"><span class="thm-badge">Teorema</span><strong style="font-size:.82rem">Euler (1763)</strong></div>
+    <div class="thm-text">Si mcd(a, n) = 1, entonces a<sup>φ(n)</sup> ≡ 1 (mod n).</div>
+  </div>
+
+  <div class="h3">Generación de claves RSA</div>
+  <div class="math">Algoritmo RSA — generación de claves:
+  1. Elegir p, q primos grandes      (NIST: ≥ 1024 bits c/u para RSA-2048)
+  2. n = p × q                       (módulo RSA, publicado)
+  3. φ(n) = (p−1)(q−1)              (totiente de Euler, SECRETO)
+  4. Elegir e: mcd(e, φ(n)) = 1     (típicamente e = 65537)
+  5. d = e⁻¹ mod φ(n)               (algoritmo extendido de Euclides)
+
+  Clave pública:  (e, n)
+  Clave privada:  (d, n)   ← NUNCA se comparte</div>
+
+  <div class="thm thm-teo">
+    <div class="thm-head"><span class="thm-badge">Teorema</span><strong style="font-size:.82rem">Correctitud de RSA</strong></div>
+    <div class="thm-text">Si mcd(M, n) = 1, entonces (M<sup>e</sup>)<sup>d</sup> ≡ M (mod n).</div>
+  </div>
+  <div class="proof"><strong>Demostración:</strong> Por construcción, ed ≡ 1 (mod φ(n)), luego ed = 1 + k·φ(n) para algún k ∈ ℤ. Entonces:<br/>
+M<sup>ed</sup> = M<sup>1+k·φ(n)</sup> = M · (M<sup>φ(n)</sup>)<sup>k</sup> ≡ M · 1<sup>k</sup> = M (mod n)<br/>
+donde la congruencia usa el Teorema de Euler ya que mcd(M,n) = 1. □</div>
+
+  <div class="thm thm-ex">
+    <div class="thm-head"><span class="thm-badge">Ejemplo</span><strong style="font-size:.82rem">RSA con parámetros pequeños — p = 61, q = 53</strong></div>
+    <div class="math" style="margin:.5rem 0 0">n = 61 × 53 = 3233
+φ(n) = 60 × 52 = 3120
+e = 17     mcd(17, 3120) = 1 ✓
+d = 17⁻¹ mod 3120 = 2753
+
+Verificación: 17 × 2753 = 46801 = 1 + 15 × 3120 ≡ 1 (mod 3120) ✓
+
+Cifrado de M = 42:    C = 42¹⁷ mod 3233 = 2557
+Descifrado:           M = 2557²⁷⁵³ mod 3233 = 42 ✓
+Firma sobre H = 42:   σ = 42²⁷⁵³ mod 3233 = 445
+Verificación firma:   445¹⁷ mod 3233 = 42 = H ✓</div>
+  </div>
+
+  <div class="h2">Fundamento matemático: Curvas Elípticas (ECDSA)</div>
+
+  <div class="thm thm-def">
+    <div class="thm-head"><span class="thm-badge">Definición</span><strong style="font-size:.82rem">Curva elíptica sobre 𝔽ₚ</strong></div>
+    <div class="thm-text">E(𝔽ₚ) : y² ≡ x³ + ax + b (mod p), con 4a³ + 27b² ≢ 0.<br/>El conjunto E(𝔽ₚ) ∪ {O} forma un <strong>grupo abeliano</strong> con la operación de suma de puntos.</div>
+  </div>
+
+  <div class="h3">Suma de puntos — del pizarrón: (2,3) y (5,7)</div>
+  <p class="body-text">La recta que pasa por P y Q intersecta la curva en R'; su reflexión sobre el eje x es P+Q = R.</p>
+
+  <div class="grid2" style="align-items:start">
+    <div>
+      <div class="math">Fórmulas algebraicas (mod p):
+  λ = (y₂ − y₁) · (x₂ − x₁)⁻¹ mod p
+  x_R = λ² − x₁ − x₂ mod p
+  y_R = λ(x₁ − x_R) − y₁ mod p
+
+Curvas estándar:
+  P-256:    y² = x³ − 3x + b (mod p₂₅₆)
+  Curve25519: Montgomery — EdDSA, X25519
+  Ed25519:  Edwards: −x² + y² = 1 + dx²y²</div>
+    </div>
+    <div style="text-align:center">
+      <canvas id="curveCanvas" width="400" height="300" style="background:#0D1B2A;border-radius:12px;max-width:100%"></canvas>
+      <div style="font-size:.68rem;color:var(--gray4);margin-top:.4rem;font-style:italic">Figura 1. y² = x³ − x + 1 con P, Q y P+Q</div>
+    </div>
+  </div>
+
+  <div class="box box-blue">
+    <div class="box-title">Problema ECDLP — del pizarrón: gˣ = a</div>
+    <p class="box-p">Dado G ∈ E(𝔽ₚ) y Q = kG, encontrar k es computacionalmente inviable. Esto formaliza gˣ ≡ a (mod p) del pizarrón, trasladado al grupo de puntos de la curva. Con k de 256 bits: O(√n) ≈ 2¹²⁸ operaciones — inviable.</p>
+  </div>
+
+  <div class="h2">Jerarquía de confianza — clic para expandir</div>
+  <div class="card">
+    <div class="hier" id="hier">
+      <div class="hier-node" id="hn0" onclick="toggleHier(0)" style="border-color:#C81E1E">
+        <div class="hier-label" style="color:#C81E1E">Root CA</div>
+        <div class="hier-sub">Autofirmada · Offline · HSM FIPS 140-3 · 20 años</div>
+        <div class="hier-detail" id="hd0" style="display:none">Nunca se conecta a internet. Clave privada en HSM (Hardware Security Module) FIPS 140-3. Solo se enciende para firmar Intermediate CAs. Es el ancla de toda la cadena de confianza.</div>
+      </div>
+      <div class="hier-conn"></div>
+      <div class="hier-node" id="hn1" onclick="toggleHier(1)" style="border-color:#B45309">
+        <div class="hier-label" style="color:#B45309">Intermediate CA</div>
+        <div class="hier-sub">Firmada por Root · Online · 5–10 años</div>
+        <div class="hier-detail" id="hd1" style="display:none">Emite certificados de usuario. Si se compromete, se revoca sin afectar la Root CA — aislamiento de riesgo. Opera con RSA-2048 o ECDSA P-256 según NIST SP 800-57.</div>
+      </div>
+      <div class="hier-conn"></div>
+      <div class="hier-node" id="hn2" onclick="toggleHier(2)" style="border-color:#1A56DB">
+        <div class="hier-label" style="color:#1A56DB">Certificados de usuario / servidor</div>
+        <div class="hier-sub">S/MIME · TLS · Code signing · 1–2 años</div>
+        <div class="hier-detail" id="hd2" style="display:none">El certificado que usa Outlook para S/MIME. Contiene: nombre, email, clave pública RSA-2048, CA firmante, fechas de vigencia y Extended Key Usage: emailProtection (OID 1.3.6.1.5.5.7.3.4).</div>
+      </div>
+    </div>
+    <div style="font-size:.68rem;color:var(--gray4);text-align:center;margin-top:.5rem;font-style:italic">Figura 2. Jerarquía de tres niveles. Si una Intermediate CA se compromete se revoca sin afectar la Root.</div>
+  </div>
+
+  <div class="h2">Componentes de una PKI</div>
+  <div class="tbl-wrap">
+  <table>
+    <thead><tr><th>Componente</th><th>Función</th></tr></thead>
+    <tbody>
+      <tr><td><strong>CA</strong> — Autoridad Certificadora</td><td>Firma digitalmente los certificados con su clave privada. Raíz de confianza.</td></tr>
+      <tr><td><strong>RA</strong> — Autoridad de Registro</td><td>Verifica la identidad del solicitante antes de que la CA emita el certificado.</td></tr>
+      <tr><td><strong>Certificado X.509</strong></td><td>Archivo estándar que vincula identidad con clave pública. Firmado por la CA.</td></tr>
+      <tr><td><strong>CRL / OCSP</strong></td><td>Mecanismos de revocación. CRL: lista periódica. OCSP: consulta en tiempo real (RFC 6960).</td></tr>
+      <tr><td><strong>HSM</strong></td><td>Hardware certificado FIPS 140-3 donde vive la clave privada de la CA. Nunca sale en texto claro. Thales Luna, Utimaco, YubiHSM.</td></tr>
+      <tr><td><strong>LDAP / Active Directory</strong></td><td>Directorio que publica certificados de usuarios para que otros puedan cifrarles emails.</td></tr>
+    </tbody>
+  </table>
+  </div>
+</div>
+
+<!-- ══════════════════════════════ X.509 ════════════════════════════════════ -->
+<div id="page-cert" class="page">
+  <h1 class="sec-title">Certificados <em>Digitales X.509 v3</em></h1>
+  <p class="sec-intro">Estándar ITU-T X.509, RFC 5280. Un certificado digital vincula criptográficamente una identidad con su clave pública. La validez depende de la <strong>firma digital de la CA</strong> al final: sin ella cualquier entidad podría fabricar un certificado falso.</p>
+
+  <div class="box box-blue">
+    <div class="box-title">Definición</div>
+    <p class="box-p">Un <strong>certificado digital</strong> es una estructura de datos estandarizada (ITU-T X.509, RFC 5280) que vincula criptográficamente una identidad (nombre, correo) con su clave pública. Es el "pasaporte digital" del usuario. Codificado en ASN.1 DER; distribuido en Base64 como PEM.</p>
+  </div>
+
+  <div class="h2">Estructura del certificado X.509 v3</div>
+  <div class="card" style="padding:0;overflow:hidden">
+    <div style="background:var(--navy);padding:.65rem 1rem;display:flex;align-items:center;gap:.5rem">
+      <span style="width:9px;height:9px;border-radius:50%;background:#68D391;display:block"></span>
+      <span style="width:9px;height:9px;border-radius:50%;background:#F6AD55;display:block"></span>
+      <span style="font-family:var(--mono);font-size:.68rem;color:#94A3B8;margin-left:.25rem">Certificado X.509 — d.garcia@anahuac.mx</span>
+      <span class="badge b-teal" style="margin-left:auto">Válido</span>
+    </div>
+    <div id="certFields"></div>
+  </div>
+  <div class="tbl-cap">Tabla 1. Campos del certificado X.509 v3. Los campos en amarillo (Key Usage y Extended Key Usage) son indispensables para S/MIME en Outlook.</div>
+
+  <div class="h2">Algoritmos vigentes según NIST SP 800-57 (2026)</div>
+  <div class="tbl-wrap">
+  <table>
+    <thead><tr><th>Algoritmo</th><th>Bits seg.</th><th>Tam. clave</th><th>Tam. firma</th><th>Estado NIST</th></tr></thead>
+    <tbody>
+      <tr class="td-teal"><td><strong>RSA-2048</strong></td><td>112</td><td>2048 b</td><td>256 B</td><td><span class="badge b-teal">Rec. hasta 2030</span></td></tr>
+      <tr class="td-teal"><td><strong>ECDSA P-256</strong></td><td>128</td><td>256 b</td><td>64 B</td><td><span class="badge b-teal">Recomendado</span></td></tr>
+      <tr class="td-teal"><td><strong>Ed25519</strong></td><td>128</td><td>256 b</td><td>64 B</td><td><span class="badge b-teal">Recomendado</span></td></tr>
+      <tr class="td-teal"><td><strong>SHA-256</strong></td><td>128</td><td>256 b output</td><td>—</td><td><span class="badge b-teal">Recomendado</span></td></tr>
+      <tr class="td-teal"><td><strong>AES-256-GCM</strong></td><td>256</td><td>256 b</td><td>—</td><td><span class="badge b-teal">Recomendado</span></td></tr>
+      <tr class="td-red"><td><strong>SHA-1</strong></td><td>&lt;80</td><td>—</td><td>—</td><td><span class="badge b-red">PROHIBIDO</span></td></tr>
+      <tr class="td-red"><td><strong>RSA-1024</strong></td><td>&lt;80</td><td>—</td><td>—</td><td><span class="badge b-red">PROHIBIDO</span></td></tr>
+      <tr class="td-blue"><td><strong>ML-DSA (FIPS 204)</strong></td><td>128</td><td>1312 B</td><td>2420 B</td><td><span class="badge b-blue">Post-cuántico 2024</span></td></tr>
+    </tbody>
+  </table>
+  <div class="tbl-cap">Tabla 2. Algoritmos según NIST SP 800-57 Rev. 5 y FIPS 204 (agosto 2024).</div>
+  </div>
+
+  <div class="h2">Formatos de archivo</div>
+  <div class="tbl-wrap">
+  <table>
+    <thead><tr><th>Extensión</th><th>Contenido</th><th>Uso típico</th></tr></thead>
+    <tbody>
+      <tr><td><code>.pem</code></td><td>Certificado en Base64 (DER codificado)</td><td>Servidores Linux, Nginx, Apache</td></tr>
+      <tr><td><code>.crt / .cer</code></td><td>PEM o DER, solo certificado</td><td>Distribución del certificado público</td></tr>
+      <tr><td><code>.pfx / .p12</code></td><td>PKCS#12: cert + clave privada + cadena CA</td><td><strong>Importación en Outlook/Windows</strong></td></tr>
+      <tr><td><code>.csr</code></td><td>PKCS#10: solicitud de certificado</td><td>Enviada a la CA para emisión</td></tr>
+    </tbody>
+  </table>
+  <div class="tbl-cap">Tabla 3. Formatos de archivo en PKI.</div>
+  </div>
+
+  <div class="h2">Ciclo de vida del certificado</div>
+  <div id="lifecycle"></div>
+</div>
+
+<!-- ══════════════════════════════ S/MIME ═══════════════════════════════════ -->
+<div id="page-smime" class="page">
+  <h1 class="sec-title">Flujo <em>S/MIME</em> completo</h1>
+  <p class="sec-intro">S/MIME (RFC 8551) implementa PKI en el correo electrónico. Dos servicios: <strong>firma digital</strong> (autenticación + integridad) y <strong>cifrado</strong> (confidencialidad). El diagrama reproduce el esquema del pizarrón: CA certifica → cliente 1 firma y cifra → cliente 2 (Outlook) descifra y verifica.</p>
+
+  <div class="box box-amber">
+    <div class="box-title">Por qué el cifrado es híbrido</div>
+    <p class="box-p">RSA es lento para contenido grande. S/MIME usa esquema <strong>híbrido</strong>: AES-256 cifra el contenido (eficiente, tiempo lineal); RSA solo cifra los 32 bytes de la clave AES (seguro). Combina eficiencia simétrica con seguridad asimétrica.</p>
+  </div>
+
+  <div class="h2">Flujo animado — escribe un mensaje y presiona ▶</div>
+  <div class="card">
+    <div style="display:flex;gap:.6rem;flex-wrap:wrap;align-items:center">
+      <input class="inp" id="flowMsg" value="Hola María, envío el reporte PKI." style="flex:1;margin:0"/>
+      <button class="btn" onclick="runFlow()">▶ Animar</button>
+      <button class="btn btn-sm" style="color:var(--gray4)" onclick="resetFlow()">↺</button>
+    </div>
+  </div>
+  <div class="flow" id="flow"></div>
+  <div id="flowDone" style="display:none" class="success-ban">
+    <span class="success-ban-ico">✓</span>
+    <div>
+      <div style="font-size:.82rem;font-weight:600;color:var(--teal)">Email verificado y descifrado exitosamente</div>
+      <div style="font-size:.72rem;color:var(--gray5);margin-top:2px">Integridad: confirmada · Autenticación: D.E. García Núñez · Cifrado: AES-256</div>
+    </div>
+  </div>
+
+  <div class="h2">Las 5 verificaciones automáticas de Outlook</div>
+  <div class="tbl-wrap">
+  <table>
+    <thead><tr><th>#</th><th>Verificación</th><th>Detalle técnico</th></tr></thead>
+    <tbody>
+      <tr class="td-teal"><td style="text-align:center;font-weight:600">1</td><td><strong>Validez de la firma</strong></td><td>Recalcula SHA-256(mensaje) y compara con σᵉ_Juan mod n. Si difieren: mensaje alterado en tránsito.</td></tr>
+      <tr><td style="text-align:center;font-weight:600">2</td><td><strong>Cadena de confianza</strong></td><td>La CA que firmó el cert de Juan debe estar en el Root Store de Windows. Si no: advertencia "certificado no confiable".</td></tr>
+      <tr class="td-teal"><td style="text-align:center;font-weight:600">3</td><td><strong>Vigencia</strong></td><td>Compara fecha actual con Not Before / Not After del X.509. Cert expirado ⇒ firma inválida aunque matemáticamente correcta.</td></tr>
+      <tr><td style="text-align:center;font-weight:600">4</td><td><strong>Revocación (OCSP/CRL)</strong></td><td>Consulta http://ocsp.anahuac.mx. Si el certificado fue revocado: rechazado inmediatamente.</td></tr>
+      <tr class="td-teal"><td style="text-align:center;font-weight:600">5</td><td><strong>Coincidencia email</strong></td><td>Subject Alt Name del cert debe coincidir con el campo From del mensaje. Previene suplantación de identidad.</td></tr>
+    </tbody>
+  </table>
+  <div class="tbl-cap">Tabla 4. Las cinco verificaciones automáticas de Outlook al recibir un email S/MIME firmado.</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════ OUTLOOK ══════════════════════════════════ -->
+<div id="page-outlook" class="page">
+  <h1 class="sec-title">Conexión con <em>Outlook</em></h1>
+  <p class="sec-intro">Implementación S/MIME en Outlook (RFC 8551). El ícono "certificado admitido" del pizarrón es el resultado de las cinco verificaciones criptográficas automáticas. Aquí la guía completa de configuración con los comandos OpenSSL exactos.</p>
+
+  <div class="h2">Configuración paso a paso</div>
+  <div id="outlookSteps"></div>
+
+  <div class="h2">Simulación de bandeja de entrada</div>
+  <div class="ol-wrap">
+    <div class="ol-bar">
+      <div class="ol-ico">O</div>
+      <span style="font-size:.78rem;color:#fff;font-weight:500">Outlook — Bandeja de entrada</span>
+    </div>
+    <div style="display:flex;min-height:260px">
+      <div class="ol-emails" style="width:240px;border-right:1px solid var(--gray3)" id="olList"></div>
+      <div class="ol-body-wrap" id="olBody" style="flex:1;padding:1rem"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════ RESULTADOS ═══════════════════════════════ -->
+<div id="page-resultados" class="page">
+  <h1 class="sec-title"><em>Resultados</em> y Análisis</h1>
+  <p class="sec-intro">Ejemplo numérico verificable de firma S/MIME, tres casos reales de PKI en producción y comparativa de algoritmos según NIST SP 800-57.</p>
+
+  <div class="h2">Ejemplo numérico verificable — firma S/MIME con RSA</div>
+  <div class="thm thm-ex">
+    <div class="thm-head"><span class="thm-badge">Ejemplo</span><strong style="font-size:.82rem">Firma S/MIME con RSA — parámetros del LaTeX</strong></div>
+    <div class="box-p" style="margin-bottom:.5rem">En producción p y q tienen 1024 bits cada uno. Valores pequeños para verificación a mano.</div>
+    <div class="math">Parámetros: p=61, q=53, n=3233, φ(n)=3120, e=17, d=2753
+
+FIRMA DEL EMAIL:
+  H = SHA-256("Hola María, envío el reporte PKI") mod n = 42
+      (Para fines ilustrativos, H = 42; en producción H tiene 256 bits)
+  σ = Hᵈ mod n = 42²⁷⁵³ mod 3233 = 445
+
+VERIFICACIÓN POR OUTLOOK:
+  H' = SHA-256(mensaje recibido) mod n
+  σᵉ mod n = 445¹⁷ mod 3233 = 42
+  H' =? 42  →  Si iguales: ✓ Firma válida
+
+SI EL MENSAJE FUE ALTERADO EN TRÁNSITO:
+  H'_alterado = 99 ≠ 42  →  ✗ Firma INVÁLIDA</div>
+  </div>
+
+  <div class="h2">Casos reales de PKI en producción</div>
+
+  <div class="card" style="border-left:4px solid var(--blue)">
+    <div class="card-lbl">Caso 1 — Internet</div>
+    <div style="font-size:.9rem;font-weight:600;color:var(--navy);margin-bottom:.5rem">Let's Encrypt</div>
+    <p class="body-text">CA pública gratuita operada por ISRG. Ha emitido más de 400 millones de certificados activos (2025).</p>
+    <div style="display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.5rem">
+      <span class="badge b-blue">Root CA: ISRG Root X1 — RSA-4096 — vigencia 2035</span>
+      <span class="badge b-teal">Intermediate: R10 y R11 — ECDSA P-384</span>
+      <span class="badge b-amber">ACME (RFC 8555) — renovación cada 90 días</span>
+    </div>
+  </div>
+
+  <div class="card" style="border-left:4px solid var(--teal)">
+    <div class="card-lbl">Caso 2 — México</div>
+    <div style="font-size:.9rem;font-weight:600;color:var(--navy);margin-bottom:.5rem">SAT / e.firma (Firma Electrónica Avanzada)</div>
+    <p class="body-text">El SAT opera una PKI nacional. Los certificados tienen validez legal en México (Art. 17-D del Código Fiscal de la Federación).</p>
+    <div style="display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.5rem">
+      <span class="badge b-teal">X.509 v3 con RSA-2048</span>
+      <span class="badge b-blue">Distribución: .cer + .key cifrado</span>
+      <span class="badge b-amber">CFDI · Declaraciones fiscales · Contratos</span>
+    </div>
+  </div>
+
+  <div class="card" style="border-left:4px solid var(--amber)">
+    <div class="card-lbl">Caso 3 — Empresa</div>
+    <div style="font-size:.9rem;font-weight:600;color:var(--navy);margin-bottom:.5rem">Microsoft 365 / Exchange — S/MIME corporativo</div>
+    <p class="body-text">CA interna (ADCS o EJBCA) emite certificados a todos los empleados. Los certificados se publican en el GAL (Global Address List) de Exchange; Outlook los descarga vía LDAP automáticamente.</p>
+    <div style="display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.5rem">
+      <span class="badge b-blue">Integración LDAP + Active Directory</span>
+      <span class="badge b-teal">Microsoft 365 Defender — mensajes sin firma → análisis adicional</span>
+    </div>
+  </div>
+
+  <div class="h2">Comparativa de algoritmos: seguridad vs. eficiencia</div>
+  <div class="tbl-wrap">
+  <table>
+    <thead><tr><th>Algoritmo</th><th>Seg. (bits)</th><th>Clave pub.</th><th>Firma</th><th>Ops/seg</th><th>Válido hasta</th></tr></thead>
+    <tbody>
+      <tr><td><strong>RSA-2048</strong></td><td>112</td><td>256 B</td><td>256 B</td><td>~1,000</td><td>2030</td></tr>
+      <tr><td><strong>RSA-4096</strong></td><td>140</td><td>512 B</td><td>512 B</td><td>~150</td><td>2040+</td></tr>
+      <tr class="td-teal"><td><strong>ECDSA P-256</strong></td><td>128</td><td>64 B</td><td>64 B</td><td>~10,000</td><td>2040+</td></tr>
+      <tr class="td-teal"><td><strong>Ed25519</strong></td><td>128</td><td>32 B</td><td>64 B</td><td>~70,000</td><td>2040+</td></tr>
+      <tr class="td-blue"><td><strong>ML-DSA-44 (FIPS 204)</strong></td><td>128</td><td>1312 B</td><td>2420 B</td><td>~5,000</td><td>Post-cuántico</td></tr>
+    </tbody>
+  </table>
+  <div class="tbl-cap">Tabla 5. Verde: recomendados actuales. Azul: post-cuántico (NIST FIPS 204, agosto 2024). RSA-2048 queda obsoleto en 2030.</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════ DEMO ═════════════════════════════════════ -->
+<div id="page-demo" class="page">
+  <h1 class="sec-title"><em>Demos</em> interactivas</h1>
+  <p class="sec-intro">Implementaciones en el navegador de las operaciones matemáticas del documento. SHA-256 real vía Web Crypto API. RSA con los mismos parámetros p=61, q=53 del ejemplo numérico del LaTeX.</p>
+
+  <div class="card">
+    <div class="card-lbl">SHA-256 — hash criptográfico real (Web Crypto API)</div>
+    <p class="body-text">Modifica el mensaje y observa el <strong>efecto avalancha</strong>: un solo carácter cambia completamente los 256 bits. Esto garantiza la integridad en S/MIME.</p>
+    <input class="inp" id="hashIn" value="Matematicas Discretas PKI 2026" oninput="calcHash()"/>
+    <div class="out" id="hashOut">Cargando…</div>
+  </div>
+
+  <div class="card">
+    <div class="card-lbl">RSA — pasos matemáticos completos (ejemplo del LaTeX: p=61, q=53)</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.6rem;margin-bottom:.6rem">
+      <div>
+        <label style="font-size:.65rem;color:var(--gray4);display:block;margin-bottom:3px">Primo p</label>
+        <input class="inp" id="rsaP" type="number" value="61" min="2" max="200" style="margin:0"/>
+      </div>
+      <div>
+        <label style="font-size:.65rem;color:var(--gray4);display:block;margin-bottom:3px">Primo q</label>
+        <input class="inp" id="rsaQ" type="number" value="53" min="2" max="200" style="margin:0"/>
+      </div>
+      <div>
+        <label style="font-size:.65rem;color:var(--gray4);display:block;margin-bottom:3px">Mensaje M</label>
+        <input class="inp" id="rsaM" type="number" value="42" style="margin:0"/>
+      </div>
+    </div>
+    <button class="btn" onclick="calcRSA()">Calcular RSA</button>
+    <div class="out" id="rsaOut" style="display:none"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-lbl">Verificación de firma — simular tampering del mensaje</div>
+    <p class="body-text">Modifica el "mensaje recibido" para simular que alguien alteró el email en tránsito. Esto es exactamente lo que detecta Outlook en el paso 7 del flujo S/MIME.</p>
+    <label style="font-size:.68rem;color:var(--gray4);display:block;margin-bottom:3px">Mensaje original (lo que Juan firmó)</label>
+    <input class="inp" id="signOrig" value="Aprobar al alumno D.E. Garcia Nunez"/>
+    <label style="font-size:.68rem;color:var(--gray4);display:block;margin-bottom:3px">Mensaje recibido (modifícalo para simular el ataque)</label>
+    <input class="inp" id="signRecv" value="Aprobar al alumno D.E. Garcia Nunez"/>
+    <button class="btn btn-teal" onclick="verifySign()">Verificar firma</button>
+    <div class="out" id="signOut" style="display:none"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════ CONCLUSIONES ══════════════════════════════ -->
+<div id="page-conc" class="page">
+  <h1 class="sec-title"><em>Conclusiones</em> y Referencias</h1>
+  <p class="sec-intro">Síntesis del proyecto y bibliografía en formato IEEE.</p>
+
+  <div class="h2">Conclusiones</div>
+  <div id="conclusions"></div>
+
+  <div class="h2" style="margin-top:2rem">Referencias — Formato IEEE</div>
+  <div class="card" id="refs"></div>
+</div>
+
+<!-- ══════════════════════════════ SIMULACIÓN ════════════════════════════════ -->
+<div id="page-sim" class="page">
+  <h1 class="sec-title">Simulación <em>en vivo</em></h1>
+  <p class="sec-intro">Conversación completa entre dos usuarios con certificados X.509 reales. Cada mensaje puede firmarse y/o cifrarse. Ambos usuarios pueden contestar en tiempo real hasta que decidan salir de la conversación.</p>
+
+  <!-- STATUS BAR -->
+  <div id="sim-status-bar" style="background:var(--navy);border-radius:var(--r2);padding:.75rem 1.1rem;margin-bottom:1.25rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+    <span style="font-family:var(--mono);font-size:.66rem;color:#64748B;letter-spacing:.05em">ESTADO PKI:</span>
+    <span id="ss-ca"    style="font-family:var(--mono);font-size:.68rem">🔴 CA no iniciada</span>
+    <span id="ss-juan"  style="font-family:var(--mono);font-size:.68rem">🔴 Sin certificado</span>
+    <span id="ss-maria" style="font-family:var(--mono);font-size:.68rem">🔴 Sin certificado</span>
+    <span id="ss-msgs"  style="font-family:var(--mono);font-size:.68rem">💬 0 mensajes</span>
+    <button id="sim-reset-btn" onclick="simReset()" style="margin-left:auto;padding:3px 10px;background:none;border:1px solid #475569;color:#94A3B8;font-family:var(--mono);font-size:.62rem;border-radius:4px;cursor:pointer;display:none">↺ Reiniciar</button>
+  </div>
+
+  <!-- ① SETUP -->
+  <div class="card" id="sim-s1">
+    <div class="card-lbl">① Comprobación de identidad — La CA verifica y emite certificados X.509</div>
+    <p class="body-text" style="margin-bottom:1rem">Antes de enviar cualquier mensaje, la <strong>Autoridad Certificadora</strong> verifica la identidad de cada usuario y le emite su certificado. Sin este paso nadie puede firmar ni cifrar.</p>
+    <div class="grid2" style="margin-bottom:1rem">
+      <div style="background:var(--gray2);border-radius:var(--r2);padding:1rem">
+        <div style="font-family:var(--mono);font-size:.65rem;font-weight:600;color:var(--amber);margin-bottom:.6rem">USUARIO 1</div>
+        <label style="font-size:.66rem;color:var(--gray4);display:block;margin-bottom:3px">Nombre</label>
+        <input class="inp" id="sj-name" value="Juan Hernandez" style="margin-bottom:.5rem"/>
+        <label style="font-size:.66rem;color:var(--gray4);display:block;margin-bottom:3px">Email</label>
+        <input class="inp" id="sj-email" value="juan@anahuac.mx" style="margin:0"/>
+        <div id="sj-status" style="margin-top:.5rem;font-family:var(--mono);font-size:.65rem;color:var(--gray4)">— sin certificado</div>
+      </div>
+      <div style="background:var(--gray2);border-radius:var(--r2);padding:1rem">
+        <div style="font-family:var(--mono);font-size:.65rem;font-weight:600;color:var(--blue);margin-bottom:.6rem">USUARIO 2</div>
+        <label style="font-size:.66rem;color:var(--gray4);display:block;margin-bottom:3px">Nombre</label>
+        <input class="inp" id="sm-name" value="Maria Garcia" style="margin-bottom:.5rem"/>
+        <label style="font-size:.66rem;color:var(--gray4);display:block;margin-bottom:3px">Email</label>
+        <input class="inp" id="sm-email" value="maria@anahuac.mx" style="margin:0"/>
+        <div id="sm-status" style="margin-top:.5rem;font-family:var(--mono);font-size:.65rem;color:var(--gray4)">— sin certificado</div>
+      </div>
+    </div>
+    <button class="btn" onclick="simSetup()" id="sim-setup-btn">🔐 Iniciar CA y emitir certificados</button>
+    <div id="sim-setup-log" class="out" style="display:none;margin-top:.75rem"></div>
+  </div>
+
+  <!-- CERTIFICADOS -->
+  <div id="sim-certs" style="display:none">
+    <div class="h2">Certificados X.509 emitidos por la CA</div>
+    <div class="grid2">
+      <div id="cert-j" class="card" style="border-top:3px solid var(--amber);padding:1rem"></div>
+      <div id="cert-m" class="card" style="border-top:3px solid var(--blue);padding:1rem"></div>
+    </div>
+  </div>
+
+  <!-- ② CHAT -->
+  <div id="sim-chat" style="display:none">
+    <div class="h2">② Conversación segura — Firmado / Cifrado</div>
+
+    <!-- Historial de mensajes -->
+    <div id="chat-history" style="background:#fff;border:1px solid var(--gray3);border-radius:var(--r2) var(--r2) 0 0;min-height:320px;max-height:480px;overflow-y:auto;padding:1rem;display:flex;flex-direction:column;gap:.85rem">
+      <div style="text-align:center;font-family:var(--mono);font-size:.65rem;color:var(--gray4);padding:.4rem 0;border-bottom:1px solid var(--gray3);margin-bottom:.3rem">
+        🔐 Canal seguro PKI establecido · Certificados X.509 v3 · SHA-256 + RSA-2048 + AES-256
+      </div>
+    </div>
+
+    <!-- Composer -->
+    <div id="chat-composer" style="background:var(--gray2);border:1px solid var(--gray3);border-top:none;border-radius:0 0 var(--r2) var(--r2);padding:1rem">
+      <!-- Selector de remitente activo -->
+      <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.75rem;flex-wrap:wrap">
+        <span style="font-size:.7rem;color:var(--gray4)">Escribiendo como:</span>
+        <button id="switch-j" onclick="switchSender('j')" class="btn" style="font-size:.68rem;padding:.3rem .8rem">
+          <span id="sw-j-dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--amber);margin-right:4px"></span>
+          <span id="sw-j-name">Juan</span>
+        </button>
+        <button id="switch-m" onclick="switchSender('m')" class="btn btn-teal" style="font-size:.68rem;padding:.3rem .8rem;opacity:.5">
+          <span id="sw-m-dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--blue);margin-right:4px"></span>
+          <span id="sw-m-name">Maria</span>
+        </button>
+        <span style="font-size:.65rem;color:var(--gray4);font-family:var(--mono)" id="composer-to-label">→ Para: Maria</span>
+      </div>
+
+      <!-- Textarea -->
+      <textarea id="chat-input" class="inp" rows="2" placeholder="Escribe tu mensaje…" style="margin-bottom:.6rem;resize:none"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();simSendMsg();}"></textarea>
+
+      <!-- Opciones + botón enviar -->
+      <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap">
+        <label style="display:flex;align-items:center;gap:.35rem;cursor:pointer;font-size:.75rem;font-weight:500">
+          <input type="checkbox" id="chat-sign" checked style="accent-color:var(--amber);width:14px;height:14px"/> ✍️ Firmar
+        </label>
+        <label style="display:flex;align-items:center;gap:.35rem;cursor:pointer;font-size:.75rem;font-weight:500">
+          <input type="checkbox" id="chat-enc" checked style="accent-color:var(--blue);width:14px;height:14px"/> 🔒 Cifrar
+        </label>
+        <button class="btn" onclick="simSendMsg()" id="chat-send-btn" style="margin-left:auto">
+          📤 Enviar <span style="font-size:.6rem;opacity:.6">(Enter)</span>
+        </button>
+        <button onclick="simEndConversation()" style="padding:.4rem .9rem;background:none;border:1px solid #FCA5A5;color:var(--red);font-family:var(--mono);font-size:.68rem;border-radius:var(--r);cursor:pointer">
+          ✕ Terminar conversación
+        </button>
+      </div>
+    </div>
+
+    <!-- Log criptográfico (colapsable) -->
+    <div style="margin-top:.75rem">
+      <button onclick="toggleCryptoLog()" style="padding:.35rem .85rem;background:none;border:1px solid var(--gray3);color:var(--gray4);font-family:var(--mono);font-size:.65rem;border-radius:var(--r);cursor:pointer;width:100%;text-align:left">
+        🔬 Ver log criptográfico del último mensaje ▾
+      </button>
+      <div id="crypto-log" class="out" style="display:none;margin-top:4px;border-radius:0 0 var(--r) var(--r);font-size:.7rem"></div>
+    </div>
+  </div>
+
+  <!-- FIN DE CONVERSACIÓN -->
+  <div id="sim-end" style="display:none">
+    <div class="h2">Resumen de la conversación</div>
+    <div class="card" id="sim-summary"></div>
+    <button class="btn btn-teal" onclick="simReset()" style="margin-top:.75rem">↺ Nueva conversación</button>
+  </div>
+
+</div>
+
+</main>
+
+<script>
+// ── NAV ───────────────────────────────────────────────────────────────────────
+const PAGES = ['cover','pki','cert','smime','outlook','resultados','demo','conc'];
+function show(id) {
+  PAGES.forEach(p => {
+    document.getElementById('page-'+p).classList.toggle('on', p===id);
+  });
+  document.querySelectorAll('.nb').forEach((b,i) => b.classList.toggle('on', PAGES[i]===id));
+  window.scrollTo({top:0, behavior:'smooth'});
+  if (id==='pki') drawCurve();
+  if (id==='demo') calcHash();
+}
+window.addEventListener('scroll', () => {
+  const h = document.documentElement.scrollHeight - window.innerHeight;
+  document.getElementById('prog').style.width = (window.scrollY/h*100)+'%';
+});
+
+// ── HIER TOGGLE ───────────────────────────────────────────────────────────────
+function toggleHier(i) {
+  const d = document.getElementById('hd'+i);
+  const n = document.getElementById('hn'+i);
+  const open = d.style.display !== 'none';
+  d.style.display = open ? 'none' : 'block';
+  n.classList.toggle('open', !open);
+}
+
+// ── CURVE CANVAS ──────────────────────────────────────────────────────────────
+function drawCurve() {
+  const c = document.getElementById('curveCanvas'); if(!c) return;
+  const ctx = c.getContext('2d');
+  const W=c.width, H=c.height, sx=W/2, sy=H/2, sc=55;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#0D1B2A'; ctx.fillRect(0,0,W,H);
+  // grid
+  ctx.strokeStyle='rgba(99,179,237,0.08)'; ctx.lineWidth=1;
+  for(let x=-5;x<=5;x++){const cx=sx+x*sc; ctx.beginPath();ctx.moveTo(cx,0);ctx.lineTo(cx,H);ctx.stroke();}
+  for(let y=-3;y<=3;y++){const cy=sy-y*sc; ctx.beginPath();ctx.moveTo(0,cy);ctx.lineTo(W,cy);ctx.stroke();}
+  // axes
+  ctx.strokeStyle='rgba(99,179,237,0.25)'; ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(0,sy);ctx.lineTo(W,sy);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(sx,0);ctx.lineTo(sx,H);ctx.stroke();
+  // axis labels
+  ctx.fillStyle='rgba(148,163,184,0.7)'; ctx.font='10px DM Mono,monospace';
+  for(let x=-4;x<=4;x++){if(!x)continue; ctx.fillText(x,sx+x*sc-4,sy+14);}
+  // curve y²=x³-x+1
+  const cy2 = x => x*x*x - x + 1;
+  ctx.strokeStyle='rgba(13,148,136,0.9)'; ctx.lineWidth=2;
+  [1,-1].forEach(sign=>{
+    let started=false; ctx.beginPath();
+    for(let px=0;px<W;px++){
+      const x=(px-sx)/sc, y2=cy2(x);
+      if(y2>=0){const py=sy-sign*Math.sqrt(y2)*sc; started?ctx.lineTo(px,py):ctx.moveTo(px,py); started=true;}
+      else started=false;
+    }
+    ctx.stroke();
+  });
+  // point P
+  const pX=-0.5, pY2=cy2(pX), pYv=pY2>=0?Math.sqrt(pY2):0;
+  ctx.fillStyle='#F59E0B'; ctx.beginPath(); ctx.arc(sx+pX*sc, sy-pYv*sc, 5,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#F59E0B'; ctx.font='bold 11px DM Mono,monospace'; ctx.fillText('P',sx+pX*sc+8,sy-pYv*sc-4);
+  // point Q
+  const qX=1.5, qY2=cy2(qX), qYv=qY2>=0?Math.sqrt(qY2):0;
+  ctx.fillStyle='#60A5FA'; ctx.beginPath(); ctx.arc(sx+qX*sc, sy-qYv*sc, 5,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#60A5FA'; ctx.font='bold 11px DM Mono,monospace'; ctx.fillText('Q',sx+qX*sc+8,sy-qYv*sc-4);
+  // P+Q (slope line + reflection)
+  const slope=(qYv-pYv)/(qX-pX||.001);
+  const rX=slope*slope-pX-qX;
+  const rY2=cy2(rX);
+  if(rY2>=0){
+    const rYv=Math.sqrt(rY2);
+    ctx.strokeStyle='rgba(245,158,11,0.35)'; ctx.lineWidth=1; ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.moveTo(sx+(pX-0.8)*sc, sy-(pYv+slope*(-0.8))*sc);
+    ctx.lineTo(sx+(qX+0.5)*sc, sy-(pYv+slope*(qX-pX+0.5))*sc); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.strokeStyle='rgba(239,68,68,0.4)'; ctx.lineWidth=1; ctx.setLineDash([3,3]);
+    ctx.beginPath(); ctx.moveTo(sx+rX*sc, sy-rYv*sc); ctx.lineTo(sx+rX*sc, sy+rYv*sc); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle='#F87171'; ctx.beginPath(); ctx.arc(sx+rX*sc, sy+rYv*sc, 6,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#F87171'; ctx.font='bold 11px DM Mono,monospace'; ctx.fillText('P+Q',sx+rX*sc+8,sy+rYv*sc+4);
+  }
+  ctx.fillStyle='rgba(13,148,136,0.7)'; ctx.font='10px DM Mono,monospace'; ctx.fillText('y² = x³ − x + 1',sx+10,16);
+}
+
+// ── BUILD CERT FIELDS ─────────────────────────────────────────────────────────
+const certData = [
+  {s:'TBSCertificate'},
+  {k:'Version',v:'v3 (0x2)',n:'Habilita extensiones X.509 v3'},
+  {k:'Serial Number',v:'0A:B1:C2:D3:E4:F5:06:07:08:09'},
+  {k:'Signature Algorithm',v:'sha256WithRSAEncryption',n:'OID 1.2.840.113549.1.1.11'},
+  {k:'Issuer',v:'CN=Universidad Anáhuac CA, O=Universidad Anáhuac, C=MX'},
+  {k:'Not Before',v:'2026-02-19T00:00:00Z'},
+  {k:'Not After',v:'2027-02-19T23:59:59Z',n:'Vigencia: 1 año'},
+  {k:'Subject',v:'CN=D.E. García Núñez, E=d.garcia@anahuac.mx'},
+  {k:'Subject Public Key',v:'rsaEncryption 2048 bits, e=65537'},
+  {s:'Extensions v3'},
+  {k:'Key Usage (crítica)',v:'digitalSignature, keyEncipherment, contentCommitment',hi:true},
+  {k:'Extended Key Usage',v:'emailProtection (OID 1.3.6.1.5.5.7.3.4)',hi:true,n:'REQUERIDO para S/MIME'},
+  {k:'Subject Alt Name',v:'email:d.garcia@anahuac.mx'},
+  {k:'CRL Distribution Points',v:'http://crl.anahuac.mx/ca.crl'},
+  {k:'Authority Info Access (OCSP)',v:'http://ocsp.anahuac.mx'},
+  {k:'Basic Constraints',v:'CA:FALSE',n:'No puede firmar otros certs'},
+  {s:'Signature'},
+  {k:'Algorithm',v:'sha256WithRSAEncryption'},
+  {k:'Value',v:'a4:b8:c1:2d:e9:f3:… [256 bytes — firma de la CA]'},
+];
+const cf = document.getElementById('certFields');
+certData.forEach(f=>{
+  if(f.s){
+    cf.innerHTML+=`<div style="background:#F8FAFC;padding:.35rem 1rem;border-top:1px solid var(--gray3)"><span style="font-family:var(--mono);font-size:.62rem;color:var(--amber);text-transform:uppercase;font-weight:600;letter-spacing:.07em">${f.s}</span></div>`;
+  } else {
+    cf.innerHTML+=`<div style="display:flex;padding:.45rem 1rem;border-top:1px solid var(--gray3);background:${f.hi?'#FFFBEB':'transparent'}">
+      <span style="font-size:.72rem;color:var(--gray4);min-width:220px;flex-shrink:0">${f.k}</span>
+      <span style="font-size:.72rem;font-family:var(--mono);color:${f.hi?'var(--amber)':'var(--teal)'};word-break:break-all">${f.v}${f.n?` <span style="color:var(--gray4);font-size:.64rem">// ${f.n}</span>`:''}</span>
+    </div>`;
+  }
+});
+
+// ── LIFECYCLE ─────────────────────────────────────────────────────────────────
+const lifecycle=[
+  ['Solicitud','El usuario genera par RSA/EC y un CSR (PKCS#10) con su clave pública y datos de identidad.'],
+  ['Validación','La RA verifica la identidad. Para S/MIME confirma el control del correo electrónico.'],
+  ['Emisión','La CA firma el certificado con su clave privada usando SHA-256 + RSA (o ECDSA P-256).'],
+  ['Distribución','Publicado en LDAP/Active Directory o adjunto en emails firmados.'],
+  ['Uso','Outlook lo usa para firmar (S/MIME) y otros lo usan para verificar/cifrar.'],
+  ['Revocación','Si la clave privada se compromete, la CA publica en CRL y OCSP. Inválido inmediatamente.'],
+  ['Renovación','Antes de la expiración, se emite un nuevo certificado repitiendo el ciclo.'],
+];
+const lc=document.getElementById('lifecycle');
+lifecycle.forEach(([t,d],i)=>{
+  lc.innerHTML+=`<div class="step"><div class="step-n">${i+1}</div><div><h4>${t}</h4><p>${d}</p></div></div>`;
+});
+
+// ── SMIME FLOW ─────────────────────────────────────────────────────────────────
+const flowData=[
+  {who:'Cliente 1 (Juan)',tag:'SHA-256',tagC:'b-blue',title:'1. Calcular hash del mensaje',
+   formula:'H = SHA-256(email) → digest 32 bytes',
+   desc:'Función unidireccional. Cualquier cambio en el mensaje cambia completamente los 256 bits. Garantiza la integridad.'},
+  {who:'Cliente 1 (Juan)',tag:'RSA-2048',tagC:'b-amber',title:'2. Firmar el hash con clave privada',
+   formula:'σ = Hᵈ mod n   ← solo Juan tiene d',
+   desc:'La firma σ prueba que Juan (y solo Juan) creó este mensaje. Nadie más tiene su clave privada d.'},
+  {who:'Cliente 1 (Juan)',tag:'AES-256',tagC:'b-teal',title:'3. Generar clave AES-256 de sesión',
+   formula:'K ← random(256 bits)   ← nueva por email',
+   desc:'Clave efímera. AES-256 cifra contenido de cualquier tamaño en tiempo lineal. Es la parte eficiente del esquema híbrido.'},
+  {who:'Cliente 1 (Juan)',tag:'Híbrido',tagC:'b-purple',title:'4. Cifrar: contenido AES + clave RSA',
+   formula:'C = AES-256(msg, K)\nC_K = Kᵉ_María mod n_María',
+   desc:'Solo María puede descifrar C_K con su clave privada. RSA solo cifra los 32 bytes de K.'},
+  {who:'Cliente 2 (Outlook)',tag:'RSA-2048',tagC:'b-blue',title:'5. María descifra la clave de sesión',
+   formula:'K = C_K^d_María mod n_María',
+   desc:'Sin la clave privada RSA, C_K es computacionalmente indesifrable.'},
+  {who:'Cliente 2 (Outlook)',tag:'AES-256',tagC:'b-teal',title:'6. Descifrar el contenido del email',
+   formula:'msg = AES-256-Dec(C, K)',
+   desc:'Con K recuperada, descifra el contenido. Eficiente incluso para archivos grandes.'},
+  {who:'Cliente 2 (Outlook)',tag:'SHA-256',tagC:'b-blue',title:'7. Verificar la firma digital',
+   formula:'σᵉ_Juan mod n =?= SHA-256(msg recibido)',
+   desc:'Si los hashes difieren: el mensaje fue alterado en tránsito. Integridad rota.'},
+  {who:'Cliente 2 (Outlook)',tag:'X.509',tagC:'b-teal',title:'8. Validar el certificado de Juan',
+   formula:'Cadena CA + Not After + OCSP',
+   desc:'Outlook verifica: cadena de confianza, vigencia, OCSP (revocación) y Subject Alt Name vs From.'},
+];
+const flowEl=document.getElementById('flow');
+flowData.forEach((s,i)=>{
+  flowEl.innerHTML+=`<div class="flow-row dim" id="fr${i}">
+    <div class="flow-l">
+      <div class="flow-num">paso ${i+1}</div>
+      <div class="flow-who">${s.who}</div>
+      <span class="badge ${s.tagC}">${s.tag}</span>
+    </div>
+    <div class="flow-r">
+      <div class="flow-title">${s.title}</div>
+      <div class="flow-formula">${s.formula}</div>
+      <div class="flow-desc">${s.desc}</div>
+    </div>
+  </div>`;
+});
+let flowTimer=null;
+async function runFlow(){
+  clearTimeout(flowTimer);
+  document.getElementById('flowDone').style.display='none';
+  flowData.forEach((_,i)=>document.getElementById('fr'+i).className='flow-row dim');
+  for(let i=0;i<flowData.length;i++){
+    await new Promise(r=>setTimeout(r,500));
+    document.getElementById('fr'+i).className='flow-row lit';
+  }
+  document.getElementById('flowDone').style.display='flex';
+}
+function resetFlow(){
+  flowData.forEach((_,i)=>document.getElementById('fr'+i).className='flow-row dim');
+  document.getElementById('flowDone').style.display='none';
+}
+
+// ── OUTLOOK SIM ───────────────────────────────────────────────────────────────
+const emails=[
+  {from:'Prof. García <garcia@anahuac.mx>',subj:'Tarea: PKI — 1ª entrega 19 Feb 2026',
+   status:'signed',cert:'Sectigo CA',algo:'sha256WithRSAEncryption',
+   body:'Estimados alumnos,\n\nRecuerden la primera entrega:\n  a) PKI — 2 páginas\n  b) Ejemplos de PKI — 2 páginas\n\nEquipos de 4 personas.\n\n— Prof. García',
+   note:'La firma digital fue verificada. Certificado emitido por Sectigo CA, confiada por Windows. SHA-256 con RSA-2048. Subject Alt Name: garcia@anahuac.mx ✓'},
+  {from:'Administración <admin@anahuac.mx>',subj:'Calificaciones — CONFIDENCIAL',
+   status:'enc+signed',cert:'Universidad Anáhuac CA',algo:'AES-256 + ECDSA P-256',
+   body:'[Mensaje cifrado con AES-256]\n[Solo tú puedes leerlo con tu clave privada RSA-2048]\n\nCalificación: 9.8/10\nProyecto PKI: Sobresaliente',
+   note:'Cifrado con AES-256-CBC. La clave de sesión fue cifrada con tu clave pública RSA-2048. Remitente autenticado mediante certificado de la CA universitaria. 5 verificaciones: ✓ todas.'},
+  {from:'unknown@dominio-raro.xyz',subj:'URGENTE: Verifica tus datos bancarios',
+   status:'none',cert:'Sin certificado',algo:'—',
+   body:'Estimado usuario,\n\nSu cuenta requiere verificación.\nClic aquí: http://phishing...\n\n[Sin firma digital S/MIME]',
+   note:'⚠ Sin firma digital. No se puede verificar la identidad del remitente. El campo From puede ser falsificado trivialmente. Con S/MIME esto no sería posible: la CA verifica la identidad.'},
+];
+let selEmail=0;
+const sC={'signed':'var(--teal)','enc+signed':'var(--blue)','none':'var(--red)'};
+const sL={'signed':'✓ Firmado','enc+signed':'🔒 Cifrado + Firmado','none':'⚠ Sin verificar'};
+function renderOL(){
+  const list=document.getElementById('olList');
+  list.innerHTML='';
+  emails.forEach((e,i)=>{
+    list.innerHTML+=`<div class="ol-email${i===selEmail?' sel':''}" onclick="selectEmail(${i})">
+      <div style="flex:1">
+        <div style="font-size:.74rem;font-weight:600;margin-bottom:2px">${e.from.split('<')[0].trim()}</div>
+        <div style="font-size:.67rem;color:var(--gray4);margin-bottom:4px">${e.subj}</div>
+        <span style="font-size:.62rem;color:${sC[e.status]};font-weight:600">${sL[e.status]}</span>
+      </div>
+    </div>`;
+  });
+  const E=emails[selEmail];
+  document.getElementById('olBody').innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.75rem;flex-wrap:wrap;gap:.4rem">
+      <div>
+        <div style="font-size:.82rem;font-weight:600">${E.subj}</div>
+        <div style="font-size:.7rem;color:var(--gray4);margin-top:2px">De: ${E.from}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:.75rem;font-weight:600;color:${sC[E.status]}">${sL[E.status]}</div>
+        <div style="font-size:.65rem;color:var(--gray4)">Cert: ${E.cert}</div>
+        <div style="font-size:.65rem;color:var(--gray4)">Algo: ${E.algo}</div>
+      </div>
+    </div>
+    <div style="background:#fff;border:1px solid var(--gray3);border-radius:var(--r);padding:.75rem;font-family:var(--mono);font-size:.72rem;white-space:pre-wrap;line-height:1.8;margin-bottom:.6rem">${E.body}</div>
+    <div style="background:${E.status==='none'?'var(--red-lt)':'var(--teal-lt)'};border:1px solid ${E.status==='none'?'#FCA5A5':'var(--teal-mid)'};border-radius:var(--r);padding:.65rem;font-size:.72rem;line-height:1.7">${E.note}</div>
+  `;
+}
+function selectEmail(i){selEmail=i;renderOL();}
+renderOL();
+
+// ── OUTLOOK STEPS ─────────────────────────────────────────────────────────────
+const steps=[
+  ['Obtener el certificado S/MIME','Solicitar a la CA universitaria o usar Sectigo (gratis 1 año). Debe tener Extended Key Usage: emailProtection (OID 1.3.6.1.5.5.7.3.4).'],
+  ['Generar clave privada y CSR',`openssl genrsa -out usuario.key 2048
+openssl req -new -key usuario.key -out usuario.csr \\
+  -subj "/CN=D.E. Garcia Nunez/emailAddress=d.garcia@anahuac.mx"`],
+  ['La CA firma el certificado',`openssl ca -config ca.conf -extensions smime_cert \\
+  -days 365 -in usuario.csr -out usuario.crt`],
+  ['Exportar como PKCS#12 para Outlook',`openssl pkcs12 -export \\
+  -in usuario.crt -inkey usuario.key \\
+  -certfile cadena-ca.crt \\
+  -out usuario.pfx
+# Contraseña requerida: NUNCA dejar vacía`],
+  ['Importar en Windows','Doble clic en usuario.pfx → Asistente de importación → Almacén: Personal. Windows cifra la clave privada con DPAPI (Data Protection API).'],
+  ['Configurar en Outlook','Archivo → Opciones → Centro de confianza → Configuración → Seguridad de correo electrónico → Seleccionar certificado de firma y cifrado.'],
+  ['Activar firma automática','Marcar "Agregar firma digital a los mensajes salientes". Al enviar el primer mensaje firmado, el destinatario puede extraer tu certificado para futuros envíos cifrados.'],
+];
+const os=document.getElementById('outlookSteps');
+steps.forEach(([t,d],i)=>{
+  const isCode=d.includes('openssl');
+  os.innerHTML+=`<div class="step"><div class="step-n">${i+1}</div><div style="flex:1"><h4>${t}</h4>${isCode?`<div class="code">${d}</div>`:`<p>${d}</p>`}</div></div>`;
+});
+
+// ── CONCLUSIONS ───────────────────────────────────────────────────────────────
+const concData=[
+  'PKI es una aplicación directa de las Matemáticas Discretas: su seguridad descansa en la dificultad computacional de la factorización de enteros (RSA) y el problema del logaritmo discreto en curvas elípticas (ECDSA, EdDSA), ambos formalizados en la teoría de números y el álgebra abstracta.',
+  'El certificado X.509 v3 no es simplemente un archivo con datos — su validez depende de una firma digital RSA/ECDSA que únicamente la CA puede generar. El Teorema de Euler garantiza matemáticamente que la operación (Mᵉ)ᵈ ≡ M (mod n) es correcta.',
+  'S/MIME en Outlook materializa toda la infraestructura PKI en una aplicación cotidiana. El ícono "certificado admitido" del pizarrón es el resultado de cinco verificaciones criptográficas automáticas: firma, cadena de confianza, vigencia, revocación y coincidencia de identidad.',
+  'La criptografía post-cuántica es una necesidad urgente. El NIST estandarizó ML-KEM (FIPS 203) y ML-DSA (FIPS 204) en agosto de 2024. El algoritmo de Shor puede romper RSA y ECDSA en tiempo polinomial en una computadora cuántica — ataque "Harvest Now, Decrypt Later".',
+];
+const conc=document.getElementById('conclusions');
+concData.forEach((c,i)=>{
+  conc.innerHTML+=`<div class="step" style="margin-bottom:.85rem"><div class="step-n">${i+1}</div><p style="font-size:.82rem;color:var(--navy);line-height:1.85">${c}</p></div>`;
+});
+
+const refData=[
+  {t:'[1]',b:'W. Diffie and M. E. Hellman, "New directions in cryptography," <em>IEEE Trans. Inf. Theory</em>, vol. 22, no. 6, pp. 644–654, Nov. 1976. DOI: 10.1109/TIT.1976.1055638'},
+  {t:'[2]',b:'R. L. Rivest, A. Shamir, and L. Adleman, "A method for obtaining digital signatures and public-key cryptosystems," <em>Commun. ACM</em>, vol. 21, no. 2, pp. 120–126, Feb. 1978. DOI: 10.1145/359340.359342'},
+  {t:'[3]',b:'D. Cooper et al., "Internet X.509 Public Key Infrastructure Certificate and CRL Profile," IETF RFC 5280, May 2008. https://tools.ietf.org/html/rfc5280'},
+  {t:'[4]',b:'B. Ramsdell and S. Turner, "S/MIME Version 4.0 Message Specification," IETF RFC 8551, Apr. 2019. https://tools.ietf.org/html/rfc8551'},
+  {t:'[5]',b:'E. Barker, "Recommendation for Key Management: Part 1 – General," NIST SP 800-57 Part 1 Rev. 5, May 2020. DOI: 10.6028/NIST.SP.800-57pt1r5'},
+  {t:'[6]',b:'M. Dworkin et al., "Module-Lattice-Based Digital Signature Standard," NIST FIPS 204, Aug. 2024. DOI: 10.6028/NIST.FIPS.204'},
+  {t:'[7]',b:'D. J. Bernstein and T. Lange, "SafeCurves: choosing safe curves for elliptic-curve cryptography," 2013. https://safecurves.cr.yp.to'},
+  {t:'[8]',b:'ITU-T, "The Directory: Public-key and attribute certificate frameworks," Recommendation X.509, Oct. 2019.'},
+];
+const refs=document.getElementById('refs');
+refData.forEach(r=>{
+  refs.innerHTML+=`<div class="ref-item"><span class="ref-tag">${r.t}</span><span class="ref-text">${r.b}</span></div>`;
+});
+
+// ── MATH HELPERS ──────────────────────────────────────────────────────────────
+const isPrime=n=>{if(n<2)return false;for(let i=2;i<=Math.sqrt(n);i++)if(n%i===0)return false;return true;};
+const gcd=(a,b)=>b===0?a:gcd(b,a%b);
+const modExp=(b,e,m)=>{let r=1n;b=b%m;while(e>0n){if(e%2n===1n)r=r*b%m;e>>=1n;b=b*b%m;}return r;};
+const modInv=(e,phi)=>{let[or,r]=[e,phi],[os,s]=[1n,0n];while(r!==0n){const q=or/r;[or,r]=[r,or-q*r];[os,s]=[s,os-q*s];}return((os%phi)+phi)%phi;};
+const simpleHash=s=>{let h=5381n;for(const c of s)h=(h*33n+BigInt(c.charCodeAt(0)))%(2n**32n);return h;};
+
+// ── SHA-256 DEMO ──────────────────────────────────────────────────────────────
+async function calcHash(){
+  const inp=document.getElementById('hashIn'); if(!inp)return;
+  const v=inp.value||'';
+  if(!v){document.getElementById('hashOut').textContent='Escribe algo…';return;}
+  try{
+    const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(v));
+    const hex=Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join(':');
+    document.getElementById('hashOut').textContent=`SHA-256("${v}"):\n${hex}\n\nLongitud: 256 bits = 32 bytes = 64 hex chars\n\nEfecto avalancha: modifica un carácter para ver cómo cambia\ncompletamente el resultado — garantía de integridad en S/MIME.`;
+  }catch{document.getElementById('hashOut').textContent='Error al calcular.';}
+}
+
+// ── RSA DEMO ──────────────────────────────────────────────────────────────────
+function calcRSA(){
+  const p=parseInt(document.getElementById('rsaP').value);
+  const q=parseInt(document.getElementById('rsaQ').value);
+  const m=parseInt(document.getElementById('rsaM').value);
+  const out=document.getElementById('rsaOut'); out.style.display='block'; out.className='out';
+  if(!isPrime(p)||!isPrime(q)){out.textContent='⚠ p y q deben ser números primos';return;}
+  if(p===q){out.textContent='⚠ p y q deben ser distintos';return;}
+  const n=BigInt(p*q),phi=BigInt((p-1)*(q-1));
+  let e=65537n; if(e>=phi)e=3n;
+  while(gcd(Number(e),Number(phi))!==1)e+=2n;
+  const d=modInv(e,phi),M=BigInt(m);
+  if(M>=n){out.textContent=`⚠ M=${m} debe ser < n=${n}`;return;}
+  const C=modExp(M,e,n),M2=modExp(C,d,n),sig=modExp(M,d,n),ver=modExp(sig,e,n);
+  out.textContent=
+`Generación de claves:
+  p = ${p},  q = ${q}
+  n = p × q = ${n}
+  φ(n) = (p−1)(q−1) = ${phi}
+  e = ${e}   (clave pública)
+  d = ${d}   (clave privada — e⁻¹ mod φ(n))
+
+Verificación: ${e} × ${d} mod ${phi} = ${(e*d)%phi} ✓  (debe ser 1)
+
+Cifrado:    C = ${m}^${e} mod ${n} = ${C}
+Descifrado: M = ${C}^${d} mod ${n} = ${M2} ✓
+
+Firma digital:
+  σ = ${m}^${d} mod ${n} = ${sig}
+  Verificar: ${sig}^${e} mod ${n} = ${ver} = M ✓`;
+}
+
+// ── SIGN VERIFY DEMO ──────────────────────────────────────────────────────────
+function verifySign(){
+  const orig=document.getElementById('signOrig').value;
+  const recv=document.getElementById('signRecv').value;
+  const out=document.getElementById('signOut'); out.style.display='block';
+  const d=2753n,e=17n,n=3233n;
+  const hO=simpleHash(orig)%n,sig=modExp(hO,d,n);
+  const hR=simpleHash(recv)%n,ver=modExp(sig,e,n);
+  const ok=ver===hR;
+  out.className=`out ${ok?'ok':'err'}`;
+  out.textContent=
+`Firma de Juan sobre mensaje original:
+  Hash("${orig.slice(0,35)}…") mod n = ${hO}
+  σ = hash^d mod n = ${sig}   ← firma digital
+
+Verificación sobre mensaje recibido:
+  Hash("${recv.slice(0,35)}…") mod n = ${hR}
+  σ^e mod n = ${ver}
+
+${ok?'✓  FIRMA VÁLIDA — el mensaje no fue alterado':'✗  FIRMA INVÁLIDA — el mensaje fue modificado o la firma es falsa'}`;
+}
+
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SIMULACIÓN — CHAT BIDIRECCIONAL CON PKI
+// ══════════════════════════════════════════════════════════════════════════════
+
+const SIM_PAGES = ['cover','pki','cert','smime','outlook','resultados','demo','conc','sim'];
+window.show = function(id){
+  SIM_PAGES.forEach(p=>{
+    const el=document.getElementById('page-'+p);
+    if(el) el.classList.toggle('on', p===id);
+  });
+  document.querySelectorAll('.nb').forEach(b=>{
+    const oc=b.getAttribute('onclick')||'';
+    b.classList.toggle('on', oc.includes("'"+id+"'"));
+  });
+  window.scrollTo({top:0,behavior:'smooth'});
+  if(id==='pki') drawCurve();
+  if(id==='demo') calcHash();
+};
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let SC = {
+  ready: false,
+  j: null,   // { name, email, key:{p,q,n,e,d}, color:'amber', initial:'J' }
+  m: null,
+  activeSender: 'j',
+  messages: [],  // { from, to, body, signed, encrypted, sig, hash, ts }
+  msgCount: 0,
+  lastCryptoLog: '',
+};
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function simHash(s){
+  let h=5381n;
+  for(const c of s) h=(h*33n+BigInt(c.charCodeAt(0)))%(2n**32n);
+  return h;
+}
+function simKey(seed){
+  const primes=[53,59,61,67,71,73,79,83,89,97,101,103,107,109,113];
+  let h=0; for(const c of seed) h=((h<<5)-h+c.charCodeAt(0))|0;
+  const pi=Math.abs(h)%primes.length;
+  const qi=(Math.abs(h>>4)+3)%primes.length;
+  const p=primes[pi], q=primes[qi===pi?(pi+1)%primes.length:qi];
+  const n=p*q, phi=(p-1)*(q-1);
+  let e=17; while(gcd(e,phi)!==1) e+=2;
+  const d=Number(modInv(BigInt(e),BigInt(phi)));
+  return {p,q,n,e,d};
+}
+function fmtTime(){
+  const d=new Date(); return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0')+':'+d.getSeconds().toString().padStart(2,'0');
+}
+function avatarHtml(user, size=34){
+  const colors={j:'var(--amber)',m:'var(--blue)'};
+  const bgs={j:'var(--amber-lt)',m:'var(--blue-lt)'};
+  const u=SC[user];
+  return `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${bgs[user]};border:2px solid ${colors[user]};display:flex;align-items:center;justify-content:center;font-weight:700;color:${colors[user]};flex-shrink:0;font-size:${size*.38}px">${u.name.charAt(0).toUpperCase()}</div>`;
+}
+
+// ── SETUP ─────────────────────────────────────────────────────────────────────
+async function simSetup(){
+  const jn=document.getElementById('sj-name').value.trim();
+  const je=document.getElementById('sj-email').value.trim();
+  const mn=document.getElementById('sm-name').value.trim();
+  const me=document.getElementById('sm-email').value.trim();
+  if(!jn||!je||!mn||!me){alert('Completa todos los campos');return;}
+
+  const btn=document.getElementById('sim-setup-btn');
+  btn.disabled=true; btn.textContent='⏳ Iniciando CA…';
+
+  const log=document.getElementById('sim-setup-log');
+  log.style.display='block'; log.className='out'; log.textContent='';
+
+  const jk=simKey(jn+je), mk=simKey(mn+me);
+
+  const lines=[
+    '> Iniciando Root CA — Universidad Anahuac',
+    '> Generando RSA-4096 para Root CA… ✓',
+    `> Verificando identidad: ${jn} <${je}>`,
+    `> Generando RSA-2048 para ${jn}: n=${jk.n}, e=${jk.e}`,
+    `> Firmando cert X.509 v3 para ${jn} — sha256WithRSAEncryption ✓`,
+    `> Verificando identidad: ${mn} <${me}>`,
+    `> Generando RSA-2048 para ${mn}: n=${mk.n}, e=${mk.e}`,
+    `> Firmando cert X.509 v3 para ${mn} — sha256WithRSAEncryption ✓`,
+    `> Ambos certificados emitidos. Canal PKI listo.`,
+  ];
+  for(const l of lines){
+    await new Promise(r=>setTimeout(r,160));
+    log.textContent+=l+'\n'; log.scrollTop=log.scrollHeight;
+  }
+
+  SC.j={name:jn,email:je,key:jk,color:'var(--amber)',bg:'var(--amber-lt)',initial:jn.charAt(0).toUpperCase()};
+  SC.m={name:mn,email:me,key:mk,color:'var(--blue)',bg:'var(--blue-lt)',initial:mn.charAt(0).toUpperCase()};
+  SC.ready=true; SC.activeSender='j'; SC.messages=[]; SC.msgCount=0;
+
+  // Status bar
+  document.getElementById('ss-ca').textContent='🟢 CA activa';
+  document.getElementById('ss-juan').textContent=`🟢 ${jn}`;
+  document.getElementById('ss-maria').textContent=`🟢 ${mn}`;
+  document.getElementById('sj-status').textContent='✓ Certificado válido · 2026-02-19 / 2027-02-19';
+  document.getElementById('sj-status').style.color='var(--teal)';
+  document.getElementById('sm-status').textContent='✓ Certificado válido · 2026-02-19 / 2027-02-19';
+  document.getElementById('sm-status').style.color='var(--teal)';
+
+  // Show certs
+  document.getElementById('sim-certs').style.display='block';
+  document.getElementById('cert-j').innerHTML=buildCertCard(SC.j,'REMITENTE');
+  document.getElementById('cert-m').innerHTML=buildCertCard(SC.m,'RECEPTOR');
+
+  // Show chat
+  document.getElementById('sim-chat').style.display='block';
+  document.getElementById('sim-reset-btn').style.display='block';
+  document.getElementById('sw-j-name').textContent=jn.split(' ')[0];
+  document.getElementById('sw-m-name').textContent=mn.split(' ')[0];
+  document.getElementById('composer-to-label').textContent='→ Para: '+mn.split(' ')[0];
+
+  btn.textContent='✓ Certificados emitidos';
+  setTimeout(()=>document.getElementById('sim-chat').scrollIntoView({behavior:'smooth',block:'start'}),500);
+}
+
+function buildCertCard(u, role){
+  const fields=[
+    ['Subject',`CN=${u.name}, E=${u.email}`],
+    ['Issuer','CN=Universidad Anahuac CA, C=MX'],
+    ['Not Before','2026-02-19'],['Not After','2027-02-19'],
+    ['Public Key',`RSA-2048, e=${u.key.e}, n=${u.key.n}`],
+    ['Key Usage','digitalSignature, keyEncipherment'],
+    ['Ext Key Usage','emailProtection (OID 1.3.6.1.5.5.7.3.4)'],
+    ['Thumbprint SHA-256',simHash(u.name+u.email).toString(16).slice(0,16)+'…'],
+  ];
+  return `
+    <div style="font-family:var(--mono);font-size:.62rem;font-weight:600;color:${u.color};margin-bottom:.5rem;letter-spacing:.07em">${role} — ${u.name.toUpperCase()}</div>
+    ${fields.map(([k,v])=>`
+      <div style="display:flex;gap:.4rem;border-bottom:1px solid var(--gray3);padding:3px 0">
+        <span style="font-size:.64rem;color:var(--gray4);min-width:105px;flex-shrink:0">${k}</span>
+        <span style="font-size:.64rem;font-family:var(--mono);color:var(--teal);word-break:break-all">${v}</span>
+      </div>`).join('')}
+    <div style="margin-top:.4rem"><span class="badge b-teal">✓ Firmado por CA</span></div>`;
+}
+
+// ── SWITCH SENDER ─────────────────────────────────────────────────────────────
+function switchSender(who){
+  SC.activeSender=who;
+  const other=who==='j'?'m':'j';
+  document.getElementById('switch-'+who).style.opacity='1';
+  document.getElementById('switch-'+other).style.opacity='.45';
+  const toUser=SC[other];
+  document.getElementById('composer-to-label').textContent='→ Para: '+toUser.name.split(' ')[0];
+  document.getElementById('chat-input').placeholder=`Escribe como ${SC[who].name.split(' ')[0]}…`;
+  document.getElementById('chat-input').focus();
+}
+
+// ── SEND MESSAGE ──────────────────────────────────────────────────────────────
+async function simSendMsg(){
+  if(!SC.ready) return;
+  const body=document.getElementById('chat-input').value.trim();
+  if(!body) return;
+  const doSign=document.getElementById('chat-sign').checked;
+  const doEnc=document.getElementById('chat-enc').checked;
+  if(!doSign&&!doEnc){alert('Selecciona al menos Firmar o Cifrar');return;}
+
+  const sender=SC[SC.activeSender];
+  const receiver=SC[SC.activeSender==='j'?'m':'j'];
+
+  const ts=fmtTime();
+  const msgHash=simHash(body)%BigInt(sender.key.n);
+  let sigma=null, aesKey=null, cKey=null;
+  const logLines=[];
+
+  if(doSign){
+    sigma=modExp(msgHash,BigInt(sender.key.d),BigInt(sender.key.n));
+    logLines.push(
+      `── FIRMA DIGITAL (${sender.name}) ──────────────`,
+      `H = SHA-256("${body.slice(0,28)}…") mod n`,
+      `H = ${msgHash}`,
+      `σ = H^d mod n = ${msgHash}^${sender.key.d} mod ${sender.key.n}`,
+      `σ = ${sigma}`,
+    );
+  }
+  if(doEnc){
+    aesKey=(simHash(body+ts)%8000n)+1000n;
+    cKey=modExp(aesKey,BigInt(receiver.key.e),BigInt(receiver.key.n));
+    logLines.push(
+      `── CIFRADO HÍBRIDO ──────────────────────────`,
+      `K_sesion = ${aesKey}  (AES-256 aleatorio)`,
+      `C_msg    = AES-256(mensaje, K)  [contenido cifrado]`,
+      `C_K      = K^e_${receiver.name.split(' ')[0]} mod n`,
+      `C_K      = ${aesKey}^${receiver.key.e} mod ${receiver.key.n} = ${cKey}`,
+    );
+  }
+  logLines.push(
+    `── VERIFICACIÓN (${receiver.name}) ──────────────`,
+    doSign ? `σ^e mod n = ${sigma}^${sender.key.e} mod ${sender.key.n} = ${modExp(sigma,BigInt(sender.key.e),BigInt(sender.key.n))} = H ✓` : '(Sin firma)',
+    doEnc  ? `K = C_K^d mod n = ${cKey}^${receiver.key.d} mod ${receiver.key.n} = ${modExp(cKey,BigInt(receiver.key.d),BigInt(receiver.key.n))} ✓` : '(Sin cifrado)',
+  );
+
+  SC.lastCryptoLog = logLines.join('\n');
+  document.getElementById('crypto-log').textContent = SC.lastCryptoLog;
+
+  // Verify for display
+  let sigOk=true;
+  if(doSign) sigOk=modExp(sigma,BigInt(sender.key.e),BigInt(sender.key.n))===msgHash;
+
+  const msg={from:SC.activeSender, body, signed:doSign, encrypted:doEnc, sig:sigma, hash:msgHash, ts, sigOk};
+  SC.messages.push(msg);
+  SC.msgCount++;
+
+  // Render bubble
+  renderBubble(msg, sender, receiver);
+
+  // Update status
+  document.getElementById('ss-msgs').textContent=`💬 ${SC.msgCount} mensaje${SC.msgCount>1?'s':''}`;
+  document.getElementById('chat-input').value='';
+  document.getElementById('chat-input').focus();
+
+  // Auto-switch sender for convenience
+  const other=SC.activeSender==='j'?'m':'j';
+  setTimeout(()=>switchSender(other),300);
+}
+
+function renderBubble(msg, sender, receiver){
+  const history=document.getElementById('chat-history');
+  const isJ=msg.from==='j';
+  const align=isJ?'flex-start':'flex-end';
+  const bubbleBg=isJ?'var(--amber-lt)':'var(--blue-lt)';
+  const bubbleBorder=isJ?'var(--amber)':'var(--blue)';
+  const nameColor=isJ?'var(--amber)':'var(--blue)';
+
+  // Verification badges
+  let verifs='';
+  if(msg.signed){
+    verifs+=`<span class="badge" style="background:${msg.sigOk?'var(--teal-lt)':'var(--red-lt)'};color:${msg.sigOk?'var(--teal)':'var(--red)'};border:1px solid ${msg.sigOk?'var(--teal-mid)':'#FCA5A5'};font-size:.6rem">${msg.sigOk?'✅ Firma válida':'❌ Firma inválida'}</span>`;
+  }
+  if(msg.encrypted){
+    verifs+=`<span class="badge b-blue" style="font-size:.6rem">🔓 Descifrado AES-256</span>`;
+  }
+
+  const div=document.createElement('div');
+  div.style.cssText=`display:flex;flex-direction:column;align-items:${align};animation:fadeUp .25s ease;`;
+  div.innerHTML=`
+    <div style="display:flex;align-items:flex-end;gap:.5rem;max-width:82%;${isJ?'':'flex-direction:row-reverse'}">
+      <div style="width:28px;height:28px;border-radius:50%;background:${sender.bg};border:1.5px solid ${sender.color};display:flex;align-items:center;justify-content:center;font-weight:700;color:${sender.color};flex-shrink:0;font-size:11px">${sender.initial}</div>
+      <div style="flex:1">
+        <div style="font-size:.65rem;color:${nameColor};font-weight:600;margin-bottom:3px;${isJ?'':'text-align:right'}">${sender.name} <span style="color:var(--gray4);font-weight:400">${msg.ts}</span></div>
+        <div style="background:${bubbleBg};border:1px solid ${bubbleBorder};border-radius:${isJ?'4px 12px 12px 12px':'12px 4px 12px 12px'};padding:.65rem .85rem;font-size:.82rem;line-height:1.7;color:var(--navy);word-break:break-word">${msg.body}</div>
+        <div style="display:flex;gap:.3rem;flex-wrap:wrap;margin-top:4px;${isJ?'':'justify-content:flex-end'}">${verifs}</div>
+      </div>
+    </div>`;
+  history.appendChild(div);
+  history.scrollTop=history.scrollHeight;
+}
+
+// ── CRYPTO LOG TOGGLE ─────────────────────────────────────────────────────────
+function toggleCryptoLog(){
+  const el=document.getElementById('crypto-log');
+  el.style.display=el.style.display==='none'?'block':'none';
+}
+
+// ── END CONVERSATION ──────────────────────────────────────────────────────────
+function simEndConversation(){
+  document.getElementById('sim-chat').style.display='none';
+  document.getElementById('sim-end').style.display='block';
+
+  const msgs=SC.messages;
+  const signed=msgs.filter(m=>m.signed).length;
+  const encrypted=msgs.filter(m=>m.encrypted).length;
+  const byJ=msgs.filter(m=>m.from==='j').length;
+  const byM=msgs.filter(m=>m.from==='m').length;
+
+  document.getElementById('sim-summary').innerHTML=`
+    <div class="card-lbl">Resumen de la conversación segura</div>
+    <div class="grid2" style="margin-bottom:1rem">
+      <div style="background:var(--gray2);border-radius:var(--r);padding:.85rem;text-align:center">
+        <div style="font-size:1.6rem;font-weight:700;color:var(--blue)">${msgs.length}</div>
+        <div style="font-size:.72rem;color:var(--gray4)">Mensajes totales</div>
+      </div>
+      <div style="background:var(--gray2);border-radius:var(--r);padding:.85rem;text-align:center">
+        <div style="font-size:1.6rem;font-weight:700;color:var(--teal)">${signed}</div>
+        <div style="font-size:.72rem;color:var(--gray4)">Mensajes firmados</div>
+      </div>
+      <div style="background:var(--gray2);border-radius:var(--r);padding:.85rem;text-align:center">
+        <div style="font-size:1.6rem;font-weight:700;color:var(--amber)">${encrypted}</div>
+        <div style="font-size:.72rem;color:var(--gray4)">Mensajes cifrados</div>
+      </div>
+      <div style="background:var(--gray2);border-radius:var(--r);padding:.85rem;text-align:center">
+        <div style="font-size:1.6rem;font-weight:700;color:var(--purple)">100%</div>
+        <div style="font-size:.72rem;color:var(--gray4)">Identidades verificadas</div>
+      </div>
+    </div>
+    <div style="font-size:.78rem;color:var(--body);line-height:1.85">
+      <strong>${SC.j.name}</strong> envió ${byJ} mensaje${byJ!==1?'s':''} · 
+      <strong>${SC.m.name}</strong> envió ${byM} mensaje${byM!==1?'s':''}.<br/>
+      Todos los mensajes firmados fueron verificados con SHA-256 + RSA-2048. 
+      Los mensajes cifrados usaron esquema híbrido AES-256 + RSA. 
+      Los certificados X.509 v3 de ambos usuarios fueron validados en cada mensaje: 
+      cadena de confianza ✓ · vigencia ✓ · OCSP ✓ · Subject Alt Name ✓.
+    </div>`;
+
+  document.getElementById('sim-end').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+// ── RESET ─────────────────────────────────────────────────────────────────────
+function simReset(){
+  SC={ready:false,j:null,m:null,activeSender:'j',messages:[],msgCount:0,lastCryptoLog:''};
+  ['sim-certs','sim-chat','sim-end'].forEach(id=>document.getElementById(id).style.display='none');
+  document.getElementById('sim-s1').style.display='block';
+  document.getElementById('sim-setup-btn').disabled=false;
+  document.getElementById('sim-setup-btn').textContent='🔐 Iniciar CA y emitir certificados';
+  document.getElementById('sim-setup-log').style.display='none';
+  document.getElementById('sim-reset-btn').style.display='none';
+  document.getElementById('chat-history').innerHTML=`
+    <div style="text-align:center;font-family:var(--mono);font-size:.65rem;color:var(--gray4);padding:.4rem 0;border-bottom:1px solid var(--gray3);margin-bottom:.3rem">
+      🔐 Canal seguro PKI establecido · Certificados X.509 v3 · SHA-256 + RSA-2048 + AES-256
+    </div>`;
+  document.getElementById('ss-ca').textContent='🔴 CA no iniciada';
+  document.getElementById('ss-juan').textContent='🔴 Sin certificado';
+  document.getElementById('ss-maria').textContent='🔴 Sin certificado';
+  document.getElementById('ss-msgs').textContent='💬 0 mensajes';
+  document.getElementById('sj-status').textContent='— sin certificado';
+  document.getElementById('sm-status').textContent='— sin certificado';
+  document.getElementById('sj-status').style.color='var(--gray4)';
+  document.getElementById('sm-status').style.color='var(--gray4)';
+  document.getElementById('crypto-log').style.display='none';
+  document.getElementById('crypto-log').textContent='';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+calcHash();
+drawCurve();
+</script>
+</body>
+</html>
